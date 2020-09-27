@@ -26,6 +26,8 @@ func (w watermark) do(base image.Image) image.Image {
 		rand.Seed(time.Now().UnixNano())
 		if w.mark.Bounds().Dx() > base.Bounds().Dx()/2 {
 			mark = imaging.Resize(w.mark, base.Bounds().Dx()/3, 0, imaging.Lanczos)
+		} else if w.mark.Bounds().Dy() > base.Bounds().Dy()/2 {
+			mark = imaging.Resize(w.mark, 0, base.Bounds().Dy()/3, imaging.Lanczos)
 		} else {
 			mark = w.mark
 		}
