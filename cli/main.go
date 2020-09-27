@@ -120,13 +120,16 @@ func main() {
 				}
 				return nil
 			})
-			workers.Slice(images, func(_ int, i interface{}) {
-				var output string
+			workers.DefaultSlice(images, func(_ int, i interface{}) {
+				rel, _ := filepath.Rel(src, i.(string))
+				filename := filepath.Base(rel)
+				ext := filepath.Ext(filename)
+				output := filepath.Join(dst, filepath.Dir(rel), filename[0:len(filename)-len(ext)]+".jpg")
 				if debug {
 					log.Printf("Converting %s to %s\n", i.(string), output)
 				}
 				if err := task.Convert(i.(string), output); err != nil {
-					log.Print(err)
+					log.Println(i, err)
 				}
 			})
 		} else {
