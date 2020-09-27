@@ -1,4 +1,4 @@
 @echo off
-cd cli
+cd cmd
 go build -ldflags "-s -w" -o ../convert.exe
 cd ..
