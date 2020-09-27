@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/disintegration/imaging"
+	"github.com/sunshineplan/image/tiff"
 )
 
 const (
@@ -65,9 +67,18 @@ func (o Option) Convert(src, dst string) error {
 		return os.ErrExist
 	}
 
-	img, err := imaging.Open(src)
+	var img image.Image
+	var err error
+	if ext := strings.ToLower(filepath.Ext(src)); ext == ".tif" || ext == ".tiff" {
+		f, err := os.Open(src)
+		if err != nil {
+			return err
+		}
+		img, err = tiff.Decode(f)
+	} else {
+		img, err = imaging.Open(src)
+	}
 	if err != nil {
-		log.Print(err)
 		return err
 	}
 	if o.watermark != nil {
