@@ -41,7 +41,7 @@ func usage() {
   --src
 		source file or directory
   --dst
-		destination file or directory
+		destination directory (default: output)
   --quality
 		set output file quality (range 1-100, default: 75)
   --watermark
@@ -63,7 +63,7 @@ func usage() {
 func main() {
 	flag.Usage = usage
 	flag.StringVar(&src, "src", "", "")
-	flag.StringVar(&dst, "dst", "", "")
+	flag.StringVar(&dst, "dst", "output", "")
 	flag.IntVar(&quality, "quality", 75, "")
 	flag.StringVar(&watermark, "watermark", "", "")
 	flag.UintVar(&opacity, "opacity", 128, "")
@@ -102,49 +102,46 @@ func main() {
 		log.Fatal(err)
 	}
 	di, err := os.Stat(dst)
-	if os.IsNotExist(err) {
-		if err := os.MkdirAll(dst, 0755); err != nil {
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(dst, 0755); err != nil {
+				log.Fatal(err)
+			}
+			di, _ = os.Stat(dst)
+		} else {
 			log.Fatal(err)
 		}
-		di, _ = os.Stat(dst)
-	} else if err != nil {
-		log.Fatal(err)
+	} else if !di.Mode().IsDir() {
+		log.Fatal("Destination is not a directory.")
 	}
 	switch mode := si.Mode(); {
 	case mode.IsDir():
-		if di.Mode().IsDir() {
-			var images []string
-			filepath.Walk(src, func(path string, _ os.FileInfo, _ error) error {
-				if ok, _ := regexp.MatchString(`^\.(jpe?g|png|gif|tiff?|bmp)$`, strings.ToLower(filepath.Ext(path))); ok {
-					images = append(images, path)
-				}
-				return nil
-			})
-			workers.DefaultSlice(images, func(_ int, i interface{}) {
-				rel, _ := filepath.Rel(src, i.(string))
-				filename := filepath.Base(rel)
-				ext := filepath.Ext(filename)
-				output := filepath.Join(dst, filepath.Dir(rel), filename[0:len(filename)-len(ext)]+".jpg")
-				if debug {
-					log.Printf("Converting %s to %s\n", i.(string), output)
-				}
-				if err := task.Convert(i.(string), output); err != nil {
-					log.Println(i, err)
-				}
-			})
-		} else {
-			log.Fatal("Destination is not a directory.")
-		}
+		var images []string
+		filepath.Walk(src, func(path string, _ os.FileInfo, _ error) error {
+			if ok, _ := regexp.MatchString(`^\.(jpe?g|png|gif|tiff?|bmp)$`, strings.ToLower(filepath.Ext(path))); ok {
+				images = append(images, path)
+			}
+			return nil
+		})
+		workers.DefaultSlice(images, func(_ int, i interface{}) {
+			rel, _ := filepath.Rel(src, i.(string))
+			filename := filepath.Base(rel)
+			ext := filepath.Ext(filename)
+			output := filepath.Join(dst, filepath.Dir(rel), filename[0:len(filename)-len(ext)]+".jpg")
+			if debug {
+				log.Printf("Converting %s to %s\n", i.(string), output)
+			}
+			if err := task.Convert(i.(string), output); err != nil {
+				log.Println(i, err)
+			}
+		})
 	case mode.IsRegular():
-		var output string
-		switch mode := di.Mode(); {
-		case mode.IsDir():
-			output = filepath.Join(dst, filepath.Base(src))
-		case mode.IsRegular():
-			output = dst
-		}
-		if err := task.Convert(src, output); err != nil {
+		filename := filepath.Base(src)
+		ext := filepath.Ext(filename)
+		if err := task.Convert(src, filepath.Join(dst, filename[0:len(filename)-len(ext)]+".jpg")); err != nil {
 			log.Fatal(err)
 		}
+	default:
+		log.Fatal("Unknow source.")
 	}
 }
