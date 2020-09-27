@@ -16,7 +16,10 @@ import (
 	"github.com/vharitonsky/iniflags"
 )
 
-var self, src, dst, watermark string
+var self string
+var src, dst string
+var quality int
+var watermark string
 var opacity uint
 var random bool
 var offsetX, offsetY int
@@ -39,6 +42,8 @@ func usage() {
 		source file or directory
   --dst
 		destination file or directory
+  --quality
+		set output file quality (range 1-100, default: 75)
   --watermark
 		watermark name (default: watermark.png)
   --opacity
@@ -59,6 +64,7 @@ func main() {
 	flag.Usage = usage
 	flag.StringVar(&src, "src", "", "")
 	flag.StringVar(&dst, "dst", "", "")
+	flag.IntVar(&quality, "quality", 75, "")
 	flag.StringVar(&watermark, "watermark", "", "")
 	flag.UintVar(&opacity, "opacity", 128, "")
 	flag.BoolVar(&random, "random", false, "")
@@ -79,7 +85,7 @@ func main() {
 	defer f.Close()
 	log.SetOutput(io.MultiWriter(f, os.Stdout))
 
-	task := img.New()
+	task := img.Option{Quality: quality}
 	if watermark != "" {
 		task.SetWatermark(watermark, opacity, random, image.Point{X: offsetX, Y: offsetY})
 	}
