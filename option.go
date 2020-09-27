@@ -51,6 +51,14 @@ func (o *Option) SetResize(width, height int, percent float64) *Option {
 	return o
 }
 
+// Test if option is runnable.
+func (o Option) Test() bool {
+	if o.watermark == nil && o.resize == nil {
+		return false
+	}
+	return true
+}
+
 // Convert image by option
 func (o Option) Convert(src, dst string) error {
 	if _, err := os.Stat(dst); !os.IsNotExist(err) {

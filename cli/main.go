@@ -59,7 +59,7 @@ func main() {
 	flag.Usage = usage
 	flag.StringVar(&src, "src", "", "")
 	flag.StringVar(&dst, "dst", "", "")
-	flag.StringVar(&watermark, "watermark", "watermark.png", "")
+	flag.StringVar(&watermark, "watermark", "", "")
 	flag.UintVar(&opacity, "opacity", 128, "")
 	flag.BoolVar(&random, "random", false, "")
 	flag.IntVar(&offsetX, "x", 0, "")
@@ -80,8 +80,16 @@ func main() {
 	log.SetOutput(io.MultiWriter(f, os.Stdout))
 
 	task := img.New()
-	task.SetWatermark(watermark, opacity, random, image.Point{X: offsetX, Y: offsetY})
-	task.SetResize(width, height, percent)
+	if watermark != "" {
+		task.SetWatermark(watermark, opacity, random, image.Point{X: offsetX, Y: offsetY})
+	}
+	if width != 0 || height != 0 || percent != 0 {
+		task.SetResize(width, height, percent)
+	}
+
+	if !task.Test() {
+		log.Fatal("No task could be found.")
+	}
 
 	si, err := os.Stat(src)
 	if err != nil {
