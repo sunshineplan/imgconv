@@ -132,7 +132,11 @@ func main() {
 				log.Printf("Converting %s to %s\n", i.(string), output)
 			}
 			if err := task.Convert(i.(string), output); err != nil {
-				log.Println(i, err)
+				if err == os.ErrExist {
+					log.Println("Skip", output)
+				} else {
+					log.Println(i, err)
+				}
 			}
 		})
 	case mode.IsRegular():
