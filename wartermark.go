@@ -17,17 +17,19 @@ type watermark struct {
 	offset  image.Point
 }
 
-func (w watermark) do(base image.Image) image.Image {
+func (w *watermark) do(base image.Image) image.Image {
 	output := image.NewRGBA(base.Bounds())
 	draw.Draw(output, output.Bounds(), base, image.ZP, draw.Src)
 	var offset image.Point
 	var mark image.Image
 	if w.random {
 		rand.Seed(time.Now().UnixNano())
-		if w.mark.Bounds().Dx() > base.Bounds().Dx()/2 {
-			mark = imaging.Resize(w.mark, base.Bounds().Dx()/3, 0, imaging.Lanczos)
-		} else if w.mark.Bounds().Dy() > base.Bounds().Dy()/2 {
-			mark = imaging.Resize(w.mark, 0, base.Bounds().Dy()/3, imaging.Lanczos)
+		if w.mark.Bounds().Dx() >= base.Bounds().Dx()/3 || w.mark.Bounds().Dy() >= base.Bounds().Dy()/3 {
+			if calcResizeXY(base.Bounds(), w.mark.Bounds()) {
+				mark = imaging.Resize(w.mark, base.Bounds().Dx()/3, 0, imaging.Lanczos)
+			} else {
+				mark = imaging.Resize(w.mark, 0, base.Bounds().Dy()/3, imaging.Lanczos)
+			}
 		} else {
 			mark = w.mark
 		}
@@ -47,12 +49,19 @@ func randRange(min, max int) int {
 
 func randOffset(base, mark image.Rectangle) image.Point {
 	return image.Pt(
-		randRange(base.Bounds().Dx()/4, base.Bounds().Dx()*3/4-mark.Bounds().Dx()),
-		randRange(base.Bounds().Dy()/4, base.Bounds().Dy()*3/4-mark.Bounds().Dy()))
+		randRange(base.Bounds().Dx()/6, base.Bounds().Dx()*5/6-mark.Bounds().Dx()),
+		randRange(base.Bounds().Dy()/6, base.Bounds().Dy()*5/6-mark.Bounds().Dy()))
 }
 
 func calcOffset(base, mark image.Rectangle, p image.Point) image.Point {
 	return image.Pt(
 		(base.Size().X/2)-(mark.Size().X/2)+p.X,
 		(base.Size().Y/2)-(mark.Size().Y/2)+p.Y)
+}
+
+func calcResizeXY(base, mark image.Rectangle) bool {
+	if base.Dx()*mark.Dy()/mark.Dx() < base.Dy() {
+		return true
+	}
+	return false
 }

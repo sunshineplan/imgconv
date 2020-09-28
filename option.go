@@ -54,7 +54,7 @@ func (o *Option) SetResize(width, height int, percent float64) *Option {
 }
 
 // Test if option is runnable.
-func (o Option) Test() bool {
+func (o *Option) Test() bool {
 	if o.watermark == nil && o.resize == nil {
 		return false
 	}
@@ -62,7 +62,7 @@ func (o Option) Test() bool {
 }
 
 // Convert image by option
-func (o Option) Convert(src, dst string) error {
+func (o *Option) Convert(src, dst string) error {
 	if _, err := os.Stat(dst); !os.IsNotExist(err) {
 		return os.ErrExist
 	}
@@ -74,6 +74,7 @@ func (o Option) Convert(src, dst string) error {
 		if err != nil {
 			return err
 		}
+		defer f.Close()
 		img, err = tiff.Decode(f)
 	} else {
 		img, err = imaging.Open(src)
@@ -81,11 +82,11 @@ func (o Option) Convert(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	if o.watermark != nil {
-		img = o.watermark.do(img)
-	}
 	if o.resize != nil {
 		img = o.resize.do(img)
+	}
+	if o.watermark != nil {
+		img = o.watermark.do(img)
 	}
 
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
