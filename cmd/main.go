@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/sunshineplan/img"
 	"github.com/sunshineplan/utils/workers"
@@ -125,22 +126,41 @@ func main() {
 			}
 			return nil
 		})
+		total := len(images)
+		log.Println("Total images:", total)
+		start := time.Now()
+		var count int
+		go func() {
+			for {
+				done := 50 * count / total
+				speed := float64(count) / float64(time.Since(start)/time.Second)
+				percent := float64(count) * 100 / float64(total)
+				left := time.Duration(float64(total-count)/speed) * time.Second
+				fmt.Printf("   [%s%s]   %.2f/s - %d(%.2f%%) of %d   Left: %v     \r",
+					strings.Repeat("=", done), strings.Repeat(" ", 50-done), speed, count, percent, total, left)
+				time.Sleep(time.Second)
+			}
+		}()
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
 			rel, _ := filepath.Rel(src, i.(string))
 			filename := filepath.Base(rel)
 			ext := filepath.Ext(filename)
 			output := filepath.Join(dst, filepath.Dir(rel), filename[0:len(filename)-len(ext)]+".jpg")
-			if debug {
-				log.Printf("Converting %s to %s\n", i.(string), output)
-			}
 			if err := task.Convert(i.(string), output); err != nil {
 				if err == os.ErrExist {
 					log.Println("Skip", output)
 				} else {
 					log.Println(i, err)
 				}
+				count++
+				return
 			}
+			if debug {
+				log.Printf("[Debug]Converted %s to %s\n", i.(string), output)
+			}
+			count++
 		})
+		log.Println("Job done! Elapsed time:", time.Since(start))
 	case mode.IsRegular():
 		filename := filepath.Base(src)
 		ext := filepath.Ext(filename)
