@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
-	"github.com/sunshineplan/image/tiff"
+	"github.com/sunshineplan/tiff"
 )
 
 const (
