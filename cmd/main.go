@@ -26,6 +26,7 @@ var offsetX, offsetY int
 var width, height int
 var percent float64
 var debug bool
+var worker int
 
 func init() {
 	var err error
@@ -73,6 +74,7 @@ func main() {
 	flag.IntVar(&width, "width", 0, "")
 	flag.IntVar(&height, "height", 0, "")
 	flag.Float64Var(&percent, "percent", 0, "")
+	flag.IntVar(&worker, "worker", 5, "")
 	flag.BoolVar(&debug, "debug", false, "")
 	iniflags.SetConfigFile(filepath.Join(filepath.Dir(self), "config.ini"))
 	iniflags.SetAllowMissingConfigFile(true)
@@ -123,7 +125,7 @@ func main() {
 			}
 			return nil
 		})
-		workers.DefaultSlice(images, func(_ int, i interface{}) {
+		workers.New(worker).Slice(images, func(_ int, i interface{}) {
 			rel, _ := filepath.Rel(src, i.(string))
 			filename := filepath.Base(rel)
 			ext := filepath.Ext(filename)
