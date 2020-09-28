@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/sunshineplan/img"
 	"github.com/sunshineplan/utils/workers"
 	"github.com/vharitonsky/iniflags"
@@ -19,6 +20,7 @@ import (
 
 var self string
 var src, dst string
+var format string
 var quality int
 var watermark string
 var opacity uint
@@ -44,8 +46,10 @@ func usage() {
 		source file or directory
   --dst
 		destination directory (default: output)
+  --format
+		output format (jpg, jpeg, png, gif, tif, tiff and bmp are supported, default: jpg)
   --quality
-		set output file quality (range 1-100, default: 75)
+		set jpeg quality (range 1-100, default: 75)
   --watermark
 		watermark name (default: watermark.png)
   --opacity
@@ -66,6 +70,7 @@ func main() {
 	flag.Usage = usage
 	flag.StringVar(&src, "src", "", "")
 	flag.StringVar(&dst, "dst", "output", "")
+	flag.StringVar(&format, "format", "jpg", "")
 	flag.IntVar(&quality, "quality", 75, "")
 	flag.StringVar(&watermark, "watermark", "", "")
 	flag.UintVar(&opacity, "opacity", 128, "")
@@ -88,16 +93,17 @@ func main() {
 	defer f.Close()
 	log.SetOutput(io.MultiWriter(f, os.Stdout))
 
-	task := img.Option{Quality: quality}
+	task := img.New()
+	if outputFormat, err := imaging.FormatFromExtension(format); err == nil {
+		task.SetFormat(outputFormat, imaging.JPEGQuality(quality))
+	} else {
+		log.Fatalln("Unknown output format:", format)
+	}
 	if watermark != "" {
 		task.SetWatermark(watermark, opacity, random, image.Point{X: offsetX, Y: offsetY})
 	}
 	if width != 0 || height != 0 || percent != 0 {
 		task.SetResize(width, height, percent)
-	}
-
-	if !task.Test() {
-		log.Fatal("No task could be found.")
 	}
 
 	si, err := os.Stat(src)
@@ -143,12 +149,10 @@ func main() {
 		}()
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
 			rel, _ := filepath.Rel(src, i.(string))
-			filename := filepath.Base(rel)
-			ext := filepath.Ext(filename)
-			output := filepath.Join(dst, filepath.Dir(rel), filename[0:len(filename)-len(ext)]+".jpg")
+			output := filepath.Join(dst, rel)
 			if err := task.Convert(i.(string), output); err != nil {
 				if err == os.ErrExist {
-					log.Println("Skip", output)
+					log.Println("Skip", i.(string))
 				} else {
 					log.Println(i, err)
 				}
@@ -156,18 +160,17 @@ func main() {
 				return
 			}
 			if debug {
-				log.Printf("[Debug]Converted %s to %s\n", i.(string), output)
+				log.Printf("[Debug]Converted %s\n", i.(string))
 			}
 			count++
 		})
 		log.Println("Job done! Elapsed time:", time.Since(start))
 	case mode.IsRegular():
 		filename := filepath.Base(src)
-		ext := filepath.Ext(filename)
-		if err := task.Convert(src, filepath.Join(dst, filename[0:len(filename)-len(ext)]+".jpg")); err != nil {
+		if err := task.Convert(src, filepath.Join(dst, filename)); err != nil {
 			log.Fatal(err)
 		}
 	default:
-		log.Fatal("Unknow source.")
+		log.Fatal("Unknown source.")
 	}
 }

@@ -2,7 +2,6 @@ package img
 
 import (
 	"image"
-	"image/jpeg"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,21 +11,20 @@ import (
 	"github.com/sunshineplan/tiff"
 )
 
-const (
-	defaultOpacity = 128
-	defaultQuality = 75
-)
+const defaultOpacity = 128
+
+var defaultFormat = format{format: imaging.JPEG, option: []imaging.EncodeOption{imaging.JPEGQuality(75)}}
 
 // Option represents option that can be used to configure a image operation.
 type Option struct {
 	watermark *watermark
 	resize    *resize
-	Quality   int
+	format    format
 }
 
 // New return a default option.
 func New() Option {
-	return Option{Quality: defaultQuality}
+	return Option{format: defaultFormat}
 }
 
 // SetWatermark sets the value for the Watermark field.
@@ -53,17 +51,16 @@ func (o *Option) SetResize(width, height int, percent float64) *Option {
 	return o
 }
 
-// Test if option is runnable.
-func (o *Option) Test() bool {
-	if o.watermark == nil && o.resize == nil {
-		return false
-	}
-	return true
+// SetFormat sets the value for the Format field.
+func (o *Option) SetFormat(f imaging.Format, option ...imaging.EncodeOption) *Option {
+	o.format = format{format: f, option: option}
+	return o
 }
 
 // Convert image by option
 func (o *Option) Convert(src, dst string) error {
-	if _, err := os.Stat(dst); !os.IsNotExist(err) {
+	output := o.format.path(dst)
+	if _, err := os.Stat(output); !os.IsNotExist(err) {
 		return os.ErrExist
 	}
 
@@ -89,18 +86,13 @@ func (o *Option) Convert(src, dst string) error {
 		img = o.watermark.do(img)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
 		return err
 	}
-	f, err := os.Create(dst)
-	if err != nil {
+	if err := o.format.save(img, output); err != nil {
+		os.Remove(output)
 		return err
-	}
-	err = jpeg.Encode(f, img, &jpeg.Options{Quality: o.Quality})
-	f.Close()
-	if err != nil {
-		os.Remove(dst)
 	}
 
-	return err
+	return nil
 }
