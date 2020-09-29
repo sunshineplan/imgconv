@@ -41,10 +41,14 @@ func (w *WatermarkOption) do(base image.Image) image.Image {
 			mark = w.Mark
 		}
 		mark = imaging.Rotate(mark, float64(randRange(-30, 30))+rand.Float64(), color.Transparent)
-		offset = randOffset(base.Bounds(), mark.Bounds())
+		offset = image.Pt(
+			randRange(base.Bounds().Dx()/6, base.Bounds().Dx()*5/6-mark.Bounds().Dx()),
+			randRange(base.Bounds().Dy()/6, base.Bounds().Dy()*5/6-mark.Bounds().Dy()))
 	} else {
 		mark = w.Mark
-		offset = calcOffset(base.Bounds(), mark.Bounds(), w.Offset)
+		offset = image.Pt(
+			(base.Bounds().Dx()/2)-(mark.Bounds().Dx()/2)+w.Offset.X,
+			(base.Bounds().Dy()/2)-(mark.Bounds().Dy()/2)+w.Offset.Y)
 	}
 	draw.DrawMask(output, mark.Bounds().Add(offset), mark, image.ZP, image.NewUniform(color.Alpha{w.Opacity}), image.ZP, draw.Over)
 	return output
@@ -52,18 +56,6 @@ func (w *WatermarkOption) do(base image.Image) image.Image {
 
 func randRange(min, max int) int {
 	return rand.Intn(max-min+1) + min
-}
-
-func randOffset(base, mark image.Rectangle) image.Point {
-	return image.Pt(
-		randRange(base.Bounds().Dx()/6, base.Bounds().Dx()*5/6-mark.Bounds().Dx()),
-		randRange(base.Bounds().Dy()/6, base.Bounds().Dy()*5/6-mark.Bounds().Dy()))
-}
-
-func calcOffset(base, mark image.Rectangle, p image.Point) image.Point {
-	return image.Pt(
-		(base.Size().X/2)-(mark.Size().X/2)+p.X,
-		(base.Size().Y/2)-(mark.Size().Y/2)+p.Y)
 }
 
 func calcResizeXY(base, mark image.Rectangle) bool {
