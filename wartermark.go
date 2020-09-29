@@ -1,4 +1,4 @@
-package img
+package imgconv
 
 import (
 	"image"
@@ -10,36 +10,42 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-type watermark struct {
-	mark    image.Image
-	opacity uint8
-	random  bool
-	offset  image.Point
+// WatermarkOption is watermark option
+type WatermarkOption struct {
+	Mark    image.Image
+	Opacity uint8
+	Random  bool
+	Offset  image.Point
 }
 
-func (w *watermark) do(base image.Image) image.Image {
+// Watermark add watermark to image
+func Watermark(base image.Image, option WatermarkOption) image.Image {
+	return option.do(base)
+}
+
+func (w *WatermarkOption) do(base image.Image) image.Image {
 	output := image.NewRGBA(base.Bounds())
 	draw.Draw(output, output.Bounds(), base, image.ZP, draw.Src)
 	var offset image.Point
 	var mark image.Image
-	if w.random {
+	if w.Random {
 		rand.Seed(time.Now().UnixNano())
-		if w.mark.Bounds().Dx() >= base.Bounds().Dx()/3 || w.mark.Bounds().Dy() >= base.Bounds().Dy()/3 {
-			if calcResizeXY(base.Bounds(), w.mark.Bounds()) {
-				mark = imaging.Resize(w.mark, base.Bounds().Dx()/3, 0, imaging.Lanczos)
+		if w.Mark.Bounds().Dx() >= base.Bounds().Dx()/3 || w.Mark.Bounds().Dy() >= base.Bounds().Dy()/3 {
+			if calcResizeXY(base.Bounds(), w.Mark.Bounds()) {
+				mark = imaging.Resize(w.Mark, base.Bounds().Dx()/3, 0, imaging.Lanczos)
 			} else {
-				mark = imaging.Resize(w.mark, 0, base.Bounds().Dy()/3, imaging.Lanczos)
+				mark = imaging.Resize(w.Mark, 0, base.Bounds().Dy()/3, imaging.Lanczos)
 			}
 		} else {
-			mark = w.mark
+			mark = w.Mark
 		}
 		mark = imaging.Rotate(mark, float64(randRange(-30, 30))+rand.Float64(), color.Transparent)
 		offset = randOffset(base.Bounds(), mark.Bounds())
 	} else {
-		mark = w.mark
-		offset = calcOffset(base.Bounds(), mark.Bounds(), w.offset)
+		mark = w.Mark
+		offset = calcOffset(base.Bounds(), mark.Bounds(), w.Offset)
 	}
-	draw.DrawMask(output, mark.Bounds().Add(offset), mark, image.ZP, image.NewUniform(color.Alpha{w.opacity}), image.ZP, draw.Over)
+	draw.DrawMask(output, mark.Bounds().Add(offset), mark, image.ZP, image.NewUniform(color.Alpha{w.Opacity}), image.ZP, draw.Over)
 	return output
 }
 

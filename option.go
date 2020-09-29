@@ -1,4 +1,4 @@
-package img
+package imgconv
 
 import (
 	"image"
@@ -13,53 +13,53 @@ import (
 
 const defaultOpacity = 128
 
-var defaultFormat = format{format: imaging.JPEG, option: []imaging.EncodeOption{imaging.JPEGQuality(75)}}
+var defaultFormat = FormatOption{Format: imaging.JPEG, EncodeOption: []imaging.EncodeOption{imaging.JPEGQuality(75)}}
 
-// Option represents option that can be used to configure a image operation.
-type Option struct {
-	watermark *watermark
-	resize    *resize
-	format    format
+// Options represents options that can be used to configure a image operation.
+type Options struct {
+	Watermark *WatermarkOption
+	Resize    *ResizeOption
+	Format    FormatOption
 }
 
 // New return a default option.
-func New() Option {
-	return Option{format: defaultFormat}
+func New() Options {
+	return Options{Format: defaultFormat}
 }
 
 // SetWatermark sets the value for the Watermark field.
-func (o *Option) SetWatermark(mark string, opacity uint, random bool, offset image.Point) *Option {
+func (o *Options) SetWatermark(mark string, opacity uint, random bool, offset image.Point) *Options {
 	img, err := imaging.Open(mark)
 	if err != nil {
 		log.Fatal(err)
 	}
-	o.watermark = &watermark{mark: img, random: random}
+	o.Watermark = &WatermarkOption{Mark: img, Random: random}
 	if !random {
-		o.watermark.offset = offset
+		o.Watermark.Offset = offset
 	}
 	if opacity == 0 {
-		o.watermark.opacity = defaultOpacity
+		o.Watermark.Opacity = defaultOpacity
 	} else {
-		o.watermark.opacity = uint8(opacity)
+		o.Watermark.Opacity = uint8(opacity)
 	}
 	return o
 }
 
 // SetResize sets the value for the Resize field.
-func (o *Option) SetResize(width, height int, percent float64) *Option {
-	o.resize = &resize{width: width, height: height, percent: percent}
+func (o *Options) SetResize(width, height int, percent float64) *Options {
+	o.Resize = &ResizeOption{Width: width, Height: height, Percent: percent}
 	return o
 }
 
 // SetFormat sets the value for the Format field.
-func (o *Option) SetFormat(f imaging.Format, option ...imaging.EncodeOption) *Option {
-	o.format = format{format: f, option: option}
+func (o *Options) SetFormat(f imaging.Format, option ...imaging.EncodeOption) *Options {
+	o.Format = FormatOption{Format: f, EncodeOption: option}
 	return o
 }
 
 // Convert image by option
-func (o *Option) Convert(src, dst string) error {
-	output := o.format.path(dst)
+func (o *Options) Convert(src, dst string) error {
+	output := o.Format.path(dst)
 	if _, err := os.Stat(output); !os.IsNotExist(err) {
 		return os.ErrExist
 	}
@@ -79,17 +79,17 @@ func (o *Option) Convert(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	if o.resize != nil {
-		img = o.resize.do(img)
+	if o.Resize != nil {
+		img = o.Resize.do(img)
 	}
-	if o.watermark != nil {
-		img = o.watermark.do(img)
+	if o.Watermark != nil {
+		img = o.Watermark.do(img)
 	}
 
 	if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
 		return err
 	}
-	if err := o.format.save(img, output); err != nil {
+	if err := o.Format.save(img, output); err != nil {
 		os.Remove(output)
 		return err
 	}

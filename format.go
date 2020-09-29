@@ -1,4 +1,4 @@
-package img
+package imgconv
 
 import (
 	"image"
@@ -15,15 +15,21 @@ var formatExts = map[imaging.Format]string{
 	imaging.BMP:  ".bmp",
 }
 
-type format struct {
-	format imaging.Format
-	option []imaging.EncodeOption
+// FormatOption is format option
+type FormatOption struct {
+	Format       imaging.Format
+	EncodeOption []imaging.EncodeOption
 }
 
-func (f *format) save(base image.Image, output string) error {
-	return imaging.Save(base, output, f.option...)
+// Export saves image according FormatOption
+func Export(base image.Image, output string, option FormatOption) error {
+	return option.save(base, output)
 }
 
-func (f *format) path(dst string) string {
-	return dst[0:len(dst)-len(filepath.Ext(dst))] + formatExts[f.format]
+func (f *FormatOption) save(base image.Image, output string) error {
+	return imaging.Save(base, output, f.EncodeOption...)
+}
+
+func (f *FormatOption) path(dst string) string {
+	return dst[0:len(dst)-len(filepath.Ext(dst))] + formatExts[f.Format]
 }

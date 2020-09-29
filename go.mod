@@ -1,4 +1,4 @@
-module github.com/sunshineplan/img
+module github.com/sunshineplan/imgconv
 
 go 1.15
 

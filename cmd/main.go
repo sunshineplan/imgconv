@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/disintegration/imaging"
-	"github.com/sunshineplan/img"
+	"github.com/sunshineplan/imgconv"
 	"github.com/sunshineplan/utils/workers"
 	"github.com/vharitonsky/iniflags"
 )
@@ -93,7 +93,7 @@ func main() {
 	defer f.Close()
 	log.SetOutput(io.MultiWriter(f, os.Stdout))
 
-	task := img.New()
+	task := imgconv.New()
 	if outputFormat, err := imaging.FormatFromExtension(format); err == nil {
 		task.SetFormat(outputFormat, imaging.JPEGQuality(quality))
 	} else {
