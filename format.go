@@ -1,14 +1,13 @@
 package imgconv
 
 import (
-	"fmt"
 	"image"
+	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/disintegration/imaging"
-	"golang.org/x/image/tiff"
+	tif "github.com/sunshineplan/tiff"
 )
 
 var formatExts = map[imaging.Format]string{
@@ -19,49 +18,41 @@ var formatExts = map[imaging.Format]string{
 	imaging.BMP:  ".bmp",
 }
 
-var tiffCompressionType = map[string]tiff.CompressionType{
-	"uncompressed": tiff.Uncompressed,
-	"deflate":      tiff.Deflate,
-	"lzw":          tiff.LZW,
-	"ccitt3":       tiff.CCITTGroup3,
-	"ccitt4":       tiff.CCITTGroup4,
-}
-
 type formatOption struct {
 	format       imaging.Format
-	encodeOption []interface{}
+	encodeOption []imaging.EncodeOption
 }
 
-// Export saves image according FormatOption
+// Encode image according format option
+func Encode(base image.Image, w io.Writer, option formatOption) error {
+	return option.encode(base, w)
+}
+
+// Export saves image according format option
 func Export(base image.Image, output string, option formatOption) error {
 	return option.save(base, output)
 }
 
+func decode(r io.Reader, format imaging.Format) (image.Image, error) {
+	if format == imaging.TIFF {
+		return tif.Decode(r)
+	}
+	return imaging.Decode(r)
+}
+
+func (f *formatOption) encode(base image.Image, w io.Writer) error {
+	return imaging.Encode(w, base, f.format, f.encodeOption...)
+}
+
 func (f *formatOption) save(base image.Image, output string) error {
-	if f.format == imaging.TIFF {
-		file, err := os.Create(output)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		opt := f.encodeOption[0].(tiff.Options)
-		return tiff.Encode(file, base, &opt)
+	file, err := os.Create(output)
+	if err != nil {
+		return err
 	}
-	var opts []imaging.EncodeOption
-	for _, i := range f.encodeOption {
-		opts = append(opts, i.(imaging.EncodeOption))
-	}
-	return imaging.Save(base, output, opts...)
+	defer file.Close()
+	return f.encode(base, file)
 }
 
 func (f *formatOption) path(dst string) string {
 	return dst[0:len(dst)-len(filepath.Ext(dst))] + formatExts[f.format]
-}
-
-// ParseTIFFCompressionType parse tiff compression type
-func ParseTIFFCompressionType(t string) (tiff.Options, error) {
-	if compression, ok := tiffCompressionType[strings.ToLower(t)]; ok {
-		return tiff.Options{Compression: compression}, nil
-	}
-	return tiff.Options{}, fmt.Errorf("unsupported tiff compression type: %s", t)
 }

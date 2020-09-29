@@ -22,8 +22,6 @@ var self string
 var src, dst string
 var format string
 var quality int
-var compression string
-var predictor bool
 var watermark string
 var opacity uint
 var random bool
@@ -52,10 +50,6 @@ func usage() {
 		output format (jpg, jpeg, png, gif, tif, tiff and bmp are supported, default: jpg)
   --quality
 		set jpeg quality (range 1-100, default: 75)
-  --compression
-		set tiff compression type (Uncompressed, Deflate, LZW, CCITTGroup3, CCITTGroup4, default: Deflate)
-  --predictor
-		set tiff compression predictor (only used with LZW, default: true)
   --watermark
 		watermark name (default: watermark.png)
   --opacity
@@ -78,8 +72,6 @@ func main() {
 	flag.StringVar(&dst, "dst", "output", "")
 	flag.StringVar(&format, "format", "jpg", "")
 	flag.IntVar(&quality, "quality", 75, "")
-	flag.StringVar(&compression, "compression", "Deflate", "")
-	flag.BoolVar(&predictor, "predictor", true, "")
 	flag.StringVar(&watermark, "watermark", "", "")
 	flag.UintVar(&opacity, "opacity", 128, "")
 	flag.BoolVar(&random, "random", false, "")
@@ -102,12 +94,10 @@ func main() {
 	log.SetOutput(io.MultiWriter(f, os.Stdout))
 
 	task := imgconv.New()
-	tiffCompression, err := imgconv.ParseTIFFCompressionType(compression)
 	if err != nil {
 		log.Fatal(err)
 	}
-	tiffCompression.Predictor = predictor
-	if err := task.SetFormat(format, imaging.JPEGQuality(quality), tiffCompression); err != nil {
+	if err := task.SetFormat(format, imaging.JPEGQuality(quality)); err != nil {
 		log.Fatal(err)
 	}
 	if watermark != "" {
