@@ -23,6 +23,16 @@ as an input, and return a new image of `*image.NRGBA` type (32bit RGBA colors, n
 
 https://pkg.go.dev/github.com/sunshineplan/imgconv
 
+## License
+
+[The MIT License (MIT)](https://raw.githubusercontent.com/sunshineplan/imgconv/master/LICENSE)
+
+## Credits
+
+This repo relies on the following third-party projects:
+
+  * [disintegration/imaging](https://github.com/disintegration/imaging)
+
 ## Usage examples
 
 A few usage examples can be found below. See the documentation for the full list of supported functions.
@@ -54,9 +64,7 @@ dstImage := imgconv.Watermark(srcImage, WatermarkOption{Mark: markImage, Opacity
 
 ```go
 // Convert srcImage to dst with jpg format.
-tast := imgconv.New()
-task.SetFormat("jpg")
-task.Convert(srcImage, dstWriter)
+imgconv.Write(srcImage, dstWriter, imgconv.FormatOption{Format: imgconv.JPEG})
 ```
 
 ## Example code
@@ -78,18 +86,16 @@ func main() {
 		log.Fatalf("failed to open image: %v", err)
 	}
 
-	// Resize the cropped image to width = 200px preserving the aspect ratio.
-	mark := imgconv.Resize(src, imgconv.ResizeOption{Percent: 25})
+	// Resize the image to width = 200px preserving the aspect ratio.
+	mark := imgconv.Resize(src, imgconv.ResizeOption{Width: 200})
 
-	// Create a blurred version of the image.
+	// Add random watermark set opacity = 128.
 	dst := imgconv.Watermark(src, imgconv.WatermarkOption{Mark: mark, Opacity: 128, Random: true})
 
-	// Save the resulting image as JPEG.
-	task := imgconv.New()
-	task.SetFormat("jpg")
-	err = task.Convert(dst, ioutil.Discard)
+	// Write the resulting image as TIFF.
+	err = imgconv.Write(dst, ioutil.Discard, imgconv.FormatOption{Format: imgconv.TIFF})
 	if err != nil {
-		log.Fatalf("failed to save image: %v", err)
+		log.Fatalf("failed to write image: %v", err)
 	}
 }
 ```

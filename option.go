@@ -3,34 +3,33 @@ package imgconv
 import (
 	"image"
 	"io"
+	"path/filepath"
 	"reflect"
-
-	"github.com/disintegration/imaging"
 )
 
 const defaultOpacity = 128
 
-var defaultFormat = formatOption{format: imaging.JPEG, encodeOption: []imaging.EncodeOption{imaging.JPEGQuality(75)}}
+var defaultFormat = FormatOption{Format: JPEG, EncodeOption: []EncodeOption{JPEGQuality(75)}}
 
 // Options represents options that can be used to configure a image operation.
 type Options struct {
 	Watermark *WatermarkOption
 	Resize    *ResizeOption
-	format    formatOption
+	Format    FormatOption
 }
 
 // New return a default option.
 func New() Options {
-	return Options{format: defaultFormat}
+	return Options{Format: defaultFormat}
 }
 
 // SetWatermark sets the value for the Watermark field.
 func (o *Options) SetWatermark(mark string, opacity uint, random bool, offset image.Point) (*Options, error) {
-	img, err := imaging.Open(mark)
+	img, err := Open(mark)
 	if err != nil {
 		return nil, err
 	}
-	o.Watermark = &WatermarkOption{mark: mark, Mark: img, Random: random}
+	o.Watermark = &WatermarkOption{Mark: img, Random: random}
 	if !random {
 		o.Watermark.Offset = offset
 	}
@@ -49,27 +48,13 @@ func (o *Options) SetResize(width, height int, percent float64) *Options {
 }
 
 // SetFormat sets the value for the Format field.
-func (o *Options) SetFormat(f string, options ...imaging.EncodeOption) error {
-	var format imaging.Format
-	var err error
-	if format, err = imaging.FormatFromExtension(f); err != nil {
-		return err
-	}
-	o.format = formatOption{format: format, encodeOption: options}
-	return nil
+func (o *Options) SetFormat(f string, options ...EncodeOption) (err error) {
+	o.Format, err = setFormat(f, options...)
+	return
 }
 
-// Convert image by option
+// Convert image by options
 func (o *Options) Convert(base image.Image, w io.Writer) error {
-	//output := o.format.path(dst)
-	//if _, err := os.Stat(output); !os.IsNotExist(err) {
-	//	return os.ErrExist
-	//}
-
-	//var img, err := Open(src)
-	//if err != nil {
-	//	return err
-	//}
 	if o.Resize != nil {
 		base = o.Resize.do(base)
 	}
@@ -77,12 +62,13 @@ func (o *Options) Convert(base image.Image, w io.Writer) error {
 		base = o.Watermark.do(base)
 	}
 
-	if reflect.DeepEqual(o.format, formatOption{}) {
-		o.format = defaultFormat
+	if reflect.DeepEqual(o.Format, FormatOption{}) {
+		o.Format = defaultFormat
 	}
-	//if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
-	//	return err
-	//}
-	return o.format.encode(base, w)
-	//os.Remove(output)
+	return o.Format.Write(base, w)
+}
+
+// ConvertExt convert filename's ext according image format
+func (o *Options) ConvertExt(filename string) string {
+	return filename[0:len(filename)-len(filepath.Ext(filename))] + "." + formatExts[o.Format.Format]
 }

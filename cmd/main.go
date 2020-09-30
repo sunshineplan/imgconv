@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/disintegration/imaging"
 	"github.com/sunshineplan/imgconv"
 	"github.com/sunshineplan/utils/workers"
 	"github.com/vharitonsky/iniflags"
@@ -51,11 +50,11 @@ func usage() {
   --quality
 		set jpeg quality (range 1-100, default: 75)
   --watermark
-		watermark name (default: watermark.png)
+		watermark path
   --opacity
 		watermark opacity (range 0-255, default: 128)
   --random
-		random watermark
+		random watermark (default: false)
   -x, y
 		fixed watermark center offset X, Y value. Only used in no random mode.
   --width
@@ -97,7 +96,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := task.SetFormat(format, imaging.JPEGQuality(quality)); err != nil {
+	if err := task.SetFormat(format, imgconv.JPEGQuality(quality)); err != nil {
 		log.Fatal(err)
 	}
 	if watermark != "" {
@@ -158,28 +157,61 @@ func main() {
 			}
 		}()
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
+			defer func() { count++ }()
 			rel, _ := filepath.Rel(src, i.(string))
-			output := filepath.Join(dst, rel)
-			if err := task.Convert(i.(string), output); err != nil {
-				if err == os.ErrExist {
-					log.Println("Skip", i.(string))
-				} else {
-					log.Println(i, err)
-				}
-				count++
+			output := task.ConvertExt(filepath.Join(dst, rel))
+			if _, err := os.Stat(output); !os.IsNotExist(err) {
+				log.Println("Skip", output)
 				return
 			}
+			if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
+				log.Print(err)
+				return
+			}
+			base, err := imgconv.Open(i.(string))
+			if err != nil {
+				log.Print(err)
+				return
+			}
+			f, err := os.Create(output)
+			if err != nil {
+				log.Print(err)
+				return
+			}
+			if err := task.Convert(base, f); err != nil {
+				log.Println(i, err)
+				f.Close()
+				os.Remove(output)
+				return
+			}
+			f.Close()
 			if debug {
 				log.Printf("[Debug]Converted %s\n", i.(string))
 			}
-			count++
 		})
 		log.Println("Job done! Elapsed time:", time.Since(start))
 	case mode.IsRegular():
-		filename := filepath.Base(src)
-		if err := task.Convert(src, filepath.Join(dst, filename)); err != nil {
+		output := task.ConvertExt(filepath.Join(dst, filepath.Base(src)))
+		if _, err := os.Stat(output); !os.IsNotExist(err) {
+			log.Fatal("Destination already exist.")
+		}
+		if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
 			log.Fatal(err)
 		}
+		base, err := imgconv.Open(src)
+		if err != nil {
+			log.Fatal(err)
+		}
+		f, err := os.Create(output)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := task.Convert(base, f); err != nil {
+			f.Close()
+			os.Remove(output)
+			log.Fatal(err)
+		}
+		f.Close()
 	default:
 		log.Fatal("Unknown source.")
 	}

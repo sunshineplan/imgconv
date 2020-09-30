@@ -12,7 +12,6 @@ import (
 
 // WatermarkOption is watermark option
 type WatermarkOption struct {
-	mark    string
 	Mark    image.Image
 	Opacity uint8
 	Random  bool
