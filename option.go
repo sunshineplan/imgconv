@@ -2,8 +2,7 @@ package imgconv
 
 import (
 	"image"
-	"os"
-	"path/filepath"
+	"io"
 	"reflect"
 
 	"github.com/disintegration/imaging"
@@ -61,42 +60,29 @@ func (o *Options) SetFormat(f string, options ...imaging.EncodeOption) error {
 }
 
 // Convert image by option
-func (o *Options) Convert(src, dst string) error {
-	output := o.format.path(dst)
-	if _, err := os.Stat(output); !os.IsNotExist(err) {
-		return os.ErrExist
-	}
+func (o *Options) Convert(base image.Image, w io.Writer) error {
+	//output := o.format.path(dst)
+	//if _, err := os.Stat(output); !os.IsNotExist(err) {
+	//	return os.ErrExist
+	//}
 
-	format, err := imaging.FormatFromFilename(src)
-	if err != nil {
-		return err
-	}
-	f, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	img, err := decode(f, format)
-	if err != nil {
-		return err
-	}
+	//var img, err := Open(src)
+	//if err != nil {
+	//	return err
+	//}
 	if o.Resize != nil {
-		img = o.Resize.do(img)
+		base = o.Resize.do(base)
 	}
 	if o.Watermark != nil {
-		img = o.Watermark.do(img)
+		base = o.Watermark.do(base)
 	}
 
 	if reflect.DeepEqual(o.format, formatOption{}) {
 		o.format = defaultFormat
 	}
-	if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
-		return err
-	}
-	if err := o.format.save(img, output); err != nil {
-		os.Remove(output)
-		return err
-	}
-
-	return nil
+	//if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
+	//	return err
+	//}
+	return o.format.encode(base, w)
+	//os.Remove(output)
 }

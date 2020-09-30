@@ -31,7 +31,7 @@ func TestWatermark(t *testing.T) {
 		t.Error("Fixed Watermark get different image")
 	}
 	m0 = (&WatermarkOption{Mark: mark, Opacity: 50, Random: true}).do(sample)
-	time.Sleep(time.Millisecond)
+	time.Sleep(time.Nanosecond)
 	m1 = (&WatermarkOption{Mark: mark, Opacity: 50, Random: true}).do(sample)
 	if reflect.DeepEqual(m0, m1) {
 		t.Error("Random Watermark get same image")

@@ -23,6 +23,31 @@ type formatOption struct {
 	encodeOption []imaging.EncodeOption
 }
 
+func decode(r io.Reader, format imaging.Format) (image.Image, error) {
+	if format == imaging.TIFF {
+		return tif.Decode(r)
+	}
+	return imaging.Decode(r)
+}
+
+// Open image according given format
+func Open(src string) (image.Image, error) {
+	format, err := imaging.FormatFromFilename(src)
+	if err != nil {
+		return nil, err
+	}
+	f, err := os.Open(src)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	img, err := decode(f, format)
+	if err != nil {
+		return nil, err
+	}
+	return img, nil
+}
+
 // Encode image according format option
 func Encode(base image.Image, w io.Writer, option formatOption) error {
 	return option.encode(base, w)
@@ -31,13 +56,6 @@ func Encode(base image.Image, w io.Writer, option formatOption) error {
 // Export saves image according format option
 func Export(base image.Image, output string, option formatOption) error {
 	return option.save(base, output)
-}
-
-func decode(r io.Reader, format imaging.Format) (image.Image, error) {
-	if format == imaging.TIFF {
-		return tif.Decode(r)
-	}
-	return imaging.Decode(r)
 }
 
 func (f *formatOption) encode(base image.Image, w io.Writer) error {
