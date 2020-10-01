@@ -74,13 +74,19 @@ func TestEncode(t *testing.T) {
 }
 
 func TestOpenSave(t *testing.T) {
-	if _, err := Open("/dev/null"); err == nil {
+	if _, err := Open("/invalid/path"); err == nil {
+		t.Error("Open invalid path want error")
+	}
+	if _, err := Open("build.bat"); err == nil {
 		t.Error("Open invalid image want error")
 	}
 	img, err := Open("testdata/video-001.png")
 	if err != nil {
 		t.Error("Fail to open image", err)
 		return
+	}
+	if err := Save(img, "/invalid/path", defaultFormat); err == nil {
+		t.Error("Save invalid path want error")
 	}
 	if err := Save(img, "testdata/video-001.jpg", defaultFormat); err != nil {
 		t.Error("Fail to save image", err)
