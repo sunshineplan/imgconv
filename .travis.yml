@@ -1,1 +1,4 @@
 language: go
+
+before_install:
+  - go get golang.org/x/image/tiff
