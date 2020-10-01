@@ -1,4 +1,11 @@
 language: go
 
+env:
+  - GO111MODULE=on
+
 before_install:
-  - go get golang.org/x/image/tiff
+  - go get github.com/mattn/goveralls
+
+script:
+  - go test -v -race -cover
+  - $GOPATH/bin/goveralls -service=travis-pro
