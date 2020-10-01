@@ -2,6 +2,7 @@ language: go
 
 go:
   - "1.12.x"
+  - master
 
 env:
   - GO111MODULE=on
@@ -10,5 +11,6 @@ before_install:
   - go get github.com/mattn/goveralls
 
 script:
+  - go build -v ./...
   - go test -v -race -cover
-  - $GOPATH/bin/goveralls -service=travis-pro
+  - $GOPATH/bin/goveralls -service=travis-ci
