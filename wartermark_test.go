@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/disintegration/imaging"
 )
 
 func TestWatermark(t *testing.T) {
@@ -29,14 +31,16 @@ func TestWatermark(t *testing.T) {
 	m0 := (&WatermarkOption{Mark: mark, Opacity: 50}).SetOffset(image.Pt(5, 5)).do(sample)
 	m1 := Watermark(sample, WatermarkOption{Mark: mark, Opacity: 50, Offset: image.Pt(5, 5)})
 	if !reflect.DeepEqual(m0, m1) {
-		t.Error("Fixed Watermark get different images")
+		t.Error("Fixed Watermark got different images")
 	}
 	m0 = (&WatermarkOption{Mark: mark, Opacity: 50}).SetRandom(true).do(sample)
 	time.Sleep(time.Nanosecond)
 	m1 = (&WatermarkOption{Mark: mark, Opacity: 50, Random: true}).do(sample)
 	if reflect.DeepEqual(m0, m1) {
-		t.Error("Random Watermark get same image")
+		t.Error("Random Watermark got same images")
 	}
+	(&WatermarkOption{Mark: sample, Random: true}).do(sample)
+	(&WatermarkOption{Mark: sample, Random: true}).do(imaging.Rotate90(sample))
 }
 
 func TestCalcResizeXY(t *testing.T) {
@@ -50,7 +54,7 @@ func TestCalcResizeXY(t *testing.T) {
 	}
 	for _, tc := range testCase {
 		if calcResizeXY(tc.base, tc.mark) != tc.want {
-			t.Errorf("Want %v, get %v", tc.want, !tc.want)
+			t.Errorf("Want %v, got %v", tc.want, !tc.want)
 		}
 	}
 }
