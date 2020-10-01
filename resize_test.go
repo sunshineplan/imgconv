@@ -17,9 +17,9 @@ func TestResize(t *testing.T) {
 	}
 
 	// Read the image.
-	sample, err := readPng("testdata/video-001.png")
+	sample, err := Open("testdata/video-001.png")
 	if err != nil {
-		t.Error("testdata/video-001.png", err)
+		t.Error(err)
 		return
 	}
 	for _, tc := range testCase {

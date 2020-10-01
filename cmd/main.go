@@ -101,9 +101,12 @@ func main() {
 		log.Fatal(err)
 	}
 	if watermark != "" {
-		if _, err := task.SetWatermark(watermark, opacity, random, image.Point{X: offsetX, Y: offsetY}); err != nil {
+		mark, err := imgconv.Open(watermark)
+		if err != nil {
 			log.Fatal(err)
 		}
+		task.SetWatermark(mark, opacity)
+		task.Watermark.SetRandom(random).SetOffset(image.Point{X: offsetX, Y: offsetY})
 	}
 	if width != 0 || height != 0 || percent != 0 {
 		task.SetResize(width, height, percent)

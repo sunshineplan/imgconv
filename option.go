@@ -24,21 +24,14 @@ func New() Options {
 }
 
 // SetWatermark sets the value for the Watermark field.
-func (o *Options) SetWatermark(mark string, opacity uint, random bool, offset image.Point) (*Options, error) {
-	img, err := Open(mark)
-	if err != nil {
-		return nil, err
-	}
-	o.Watermark = &WatermarkOption{Mark: img, Random: random}
-	if !random {
-		o.Watermark.Offset = offset
-	}
+func (o *Options) SetWatermark(mark image.Image, opacity uint) *Options {
+	o.Watermark = &WatermarkOption{Mark: mark}
 	if opacity == 0 {
 		o.Watermark.Opacity = defaultOpacity
 	} else {
 		o.Watermark.Opacity = uint8(opacity)
 	}
-	return o, nil
+	return o
 }
 
 // SetResize sets the value for the Resize field.

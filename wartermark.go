@@ -23,6 +23,18 @@ func Watermark(base image.Image, option WatermarkOption) image.Image {
 	return option.do(base)
 }
 
+// SetRandom sets the option for the Watermark position random or not.
+func (w *WatermarkOption) SetRandom(random bool) *WatermarkOption {
+	w.Random = random
+	return w
+}
+
+// SetOffset sets the option for the Watermark offset base center when adding fixed watermark.
+func (w *WatermarkOption) SetOffset(offset image.Point) *WatermarkOption {
+	w.Offset = offset
+	return w
+}
+
 func (w *WatermarkOption) do(base image.Image) image.Image {
 	output := image.NewRGBA(base.Bounds())
 	draw.Draw(output, output.Bounds(), base, image.ZP, draw.Src)
