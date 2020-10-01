@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sunshineplan/imgconv"
+	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/workers"
 	"github.com/vharitonsky/iniflags"
 )
@@ -138,24 +139,7 @@ func main() {
 		log.Println("Total images:", total)
 		start := time.Now()
 		var count int
-		var speed float64
-		go func() {
-			for {
-				now := count
-				time.Sleep(5 * time.Second)
-				speed = float64(count-now) / 5
-			}
-		}()
-		go func() {
-			for {
-				done := 50 * count / total
-				percent := float64(count) * 100 / float64(total)
-				left := time.Duration(float64(total-count)/speed) * time.Second
-				fmt.Printf("   [%s%s]   %.2f/s - %d(%.2f%%) of %d   Left: %v     \r",
-					strings.Repeat("=", done), strings.Repeat(" ", 50-done), speed, count, percent, total, left)
-				time.Sleep(time.Second)
-			}
-		}()
+		go progressbar.New().Start(total, &count)
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
 			defer func() { count++ }()
 			rel, _ := filepath.Rel(src, i.(string))
@@ -170,7 +154,7 @@ func main() {
 			}
 			base, err := imgconv.Open(i.(string))
 			if err != nil {
-				log.Print(err)
+				log.Println(i, err)
 				return
 			}
 			f, err := os.Create(output)
