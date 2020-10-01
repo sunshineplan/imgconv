@@ -86,7 +86,9 @@ func main() {
 	iniflags.SetAllowMissingConfigFile(true)
 	iniflags.Parse()
 
-	f, err := os.OpenFile(filepath.Join(filepath.Dir(self), "convert.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
+	f, err := os.OpenFile(
+		filepath.Join(filepath.Dir(self), fmt.Sprintf("convert%s.log", time.Now().Format("20060102150405"))),
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
 	if err != nil {
 		log.Fatalf("Failed to open log file: %v", err)
 	}
