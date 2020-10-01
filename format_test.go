@@ -5,9 +5,32 @@ import (
 	"image/draw"
 	"image/png"
 	"io/ioutil"
-	"reflect"
+	"os"
 	"testing"
 )
+
+func TestSetFormat(t *testing.T) {
+	if _, err := setFormat("Jpg"); err != nil {
+		t.Error("Failed to set format")
+	}
+	if _, err := setFormat("txt"); err == nil {
+		t.Error("set txt format want error")
+	}
+}
+
+func TestDecode(t *testing.T) {
+	f, err := os.Open("testdata/video-001.png")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if _, err := Decode(f); err != nil {
+		t.Error("Failed to decode")
+	}
+	if _, err := Decode(bytes.NewBufferString("Hello")); err == nil {
+		t.Error("Decode string want error")
+	}
+}
 
 func TestEncode(t *testing.T) {
 	testCase := []FormatOption{
@@ -43,17 +66,27 @@ func TestEncode(t *testing.T) {
 			t.Error(formatExts[fo.Format], err)
 			continue
 		}
-		m2, err := Decode(bytes.NewBuffer(b))
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-		if !reflect.DeepEqual(m1, m2) {
-			t.Error("Decode get different images")
-		}
 		if m0.Bounds() != m1.Bounds() {
 			t.Errorf("bounds differ: %v and %v", m0.Bounds(), m1.Bounds())
 			continue
 		}
+	}
+}
+
+func TestOpenSave(t *testing.T) {
+	if _, err := Open("/dev/null"); err == nil {
+		t.Error("Open invalid image want error")
+	}
+	img, err := Open("testdata/video-001.png")
+	if err != nil {
+		t.Error("Fail to open image", err)
+		return
+	}
+	if err := Save(img, "testdata/video-001.jpg", defaultFormat); err != nil {
+		t.Error("Fail to save image", err)
+		return
+	}
+	if err := os.Remove("testdata/video-001.jpg"); err != nil {
+		t.Error(err)
 	}
 }

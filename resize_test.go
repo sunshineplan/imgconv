@@ -2,6 +2,7 @@ package imgconv
 
 import (
 	"image"
+	"reflect"
 	"testing"
 )
 
@@ -24,10 +25,14 @@ func TestResize(t *testing.T) {
 	}
 	for _, tc := range testCase {
 		// Resize the image.
-		got := tc.option.do(sample)
-		if got.Bounds().Size() != tc.want {
-			t.Errorf("bounds differ: %v and %v", got.Bounds().Size(), tc.want)
+		got1 := tc.option.do(sample)
+		if got1.Bounds().Size() != tc.want {
+			t.Errorf("bounds differ: %v and %v", got1.Bounds().Size(), tc.want)
 			continue
+		}
+		got2 := Resize(sample, tc.option)
+		if !reflect.DeepEqual(got1, got2) {
+			t.Error("Resize gets different images")
 		}
 	}
 }

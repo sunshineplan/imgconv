@@ -1,8 +1,9 @@
 package imgconv
 
 import (
+	"bytes"
 	"image"
-	"io/ioutil"
+	"reflect"
 	"testing"
 )
 
@@ -26,17 +27,33 @@ func TestOption(t *testing.T) {
 	if mark != o.Watermark.Mark || o.Watermark.Opacity != 100 {
 		t.Error("SetWatermark result is not expect one.")
 	}
+	o.SetWatermark(mark, 0)
+	if mark != o.Watermark.Mark || o.Watermark.Opacity != 128 {
+		t.Error("SetWatermark result is not expect one.")
+	}
 	o.SetResize(0, 0, 33)
 	if o.Resize.Width != 0 || o.Resize.Height != 0 || o.Resize.Percent != 33 {
 		t.Error("SetResize result is not expect one.")
 	}
+}
+
+func TestConvert(t *testing.T) {
 	base, err := Open("testdata/video-001.png")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if err := o.Convert(base, ioutil.Discard); err != nil {
+	var buf1, buf2 bytes.Buffer
+	o := New()
+	if err := o.Convert(base, &buf1); err != nil {
 		t.Error("Failed to Convert.")
+	}
+	o = Options{Format: FormatOption{}}
+	if err := o.Convert(base, &buf2); err != nil {
+		t.Error("Failed to Convert.")
+	}
+	if !reflect.DeepEqual(buf1, buf2) {
+		t.Error("Convert get different result")
 	}
 }
 
