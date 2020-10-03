@@ -13,7 +13,7 @@
 Package imgconv provides basic image processing functions (resize, add watermark, format converter.).
 
 All the image processing functions provided by the package accept any image type that implements `image.Image` interface
-as an input, include jpg, jpeg, png, gif, tif, tiff and bmp.
+as an input, include jpg(jpeg), png, gif, tif(tiff) ,bmp and webp(decode only).
 
 ## Installation
 

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"image/draw"
 	"image/png"
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -19,13 +18,23 @@ func TestSetFormat(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	f, err := os.Open("testdata/video-001.png")
-	if err != nil {
-		t.Error(err)
-		return
+	var format = []string{
+		"jpg",
+		"png",
+		"gif",
+		"tif",
+		"bmp",
+		"webp",
 	}
-	if _, err := Decode(f); err != nil {
-		t.Error("Failed to decode")
+	for _, i := range format {
+		f, err := os.Open("testdata/video-001." + i)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+		if _, err := Decode(f); err != nil {
+			t.Error("Failed to decode", i)
+		}
 	}
 	if _, err := Decode(bytes.NewBufferString("Hello")); err == nil {
 		t.Error("Decode string want error")
@@ -60,8 +69,7 @@ func TestEncode(t *testing.T) {
 			continue
 		}
 		// Decode the image.
-		b, _ := ioutil.ReadAll(&buf)
-		m1, err := decode(bytes.NewBuffer(b), fo.Format)
+		m1, err := Decode(&buf)
 		if err != nil {
 			t.Error(formatExts[fo.Format], err)
 			continue

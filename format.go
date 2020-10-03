@@ -1,16 +1,17 @@
 package imgconv
 
 import (
-	"bytes"
 	"image"
 	"image/draw"
+	_ "image/jpeg" // decode jpeg format
 	"image/png"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/disintegration/imaging"
-	"github.com/sunshineplan/tiff"
+	_ "github.com/sunshineplan/tiff" // decode tiff format
+	_ "golang.org/x/image/bmp"       // decode bmp format
+	_ "golang.org/x/image/webp"      // decode webp format
 )
 
 // Format is an image file format.
@@ -84,45 +85,20 @@ func setFormat(f string, options ...EncodeOption) (fo FormatOption, err error) {
 	return
 }
 
-func decode(r io.Reader, format Format) (image.Image, error) {
-	if format == TIFF {
-		// use forked tiff package because golang.org/x/image/tiff treat bad IFD tags order as invalid tiff
-		return tiff.Decode(r)
-	}
-	return imaging.Decode(r)
-}
-
 // Decode reads an image from r.
-func Decode(r io.Reader) (img image.Image, err error) {
-	var b []byte
-	b, err = ioutil.ReadAll(r)
-	if err != nil {
-		return
-	}
-	img, err = imaging.Decode(bytes.NewBuffer(b))
-	if err != nil {
-		// try forked tiff package
-		img, err = tiff.Decode(bytes.NewBuffer(b))
-	}
-	return
+func Decode(r io.Reader) (image.Image, error) {
+	img, _, err := image.Decode(r)
+	return img, err
 }
 
 // Open loads an image from file.
 func Open(file string) (image.Image, error) {
-	format, err := imaging.FormatFromFilename(file)
-	if err != nil {
-		format = -1
-	}
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	img, err := decode(f, Format(format))
-	if err != nil {
-		return nil, err
-	}
-	return img, nil
+	return Decode(f)
 }
 
 // Write image according format option
