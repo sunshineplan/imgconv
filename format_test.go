@@ -96,11 +96,11 @@ func TestOpenSave(t *testing.T) {
 	if err := Save(img, "/invalid/path", defaultFormat); err == nil {
 		t.Error("Save invalid path want error")
 	}
-	if err := Save(img, "testdata/video-001.jpg", defaultFormat); err != nil {
+	if err := Save(img, "testdata/tmp", defaultFormat); err != nil {
 		t.Error("Fail to save image", err)
 		return
 	}
-	if err := os.Remove("testdata/video-001.jpg"); err != nil {
+	if err := os.Remove("testdata/tmp"); err != nil {
 		t.Error(err)
 	}
 }

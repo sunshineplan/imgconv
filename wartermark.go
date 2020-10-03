@@ -44,9 +44,9 @@ func (w *WatermarkOption) do(base image.Image) image.Image {
 		rand.Seed(time.Now().UnixNano())
 		if w.Mark.Bounds().Dx() >= base.Bounds().Dx()/3 || w.Mark.Bounds().Dy() >= base.Bounds().Dy()/3 {
 			if calcResizeXY(base.Bounds(), w.Mark.Bounds()) {
-				mark = imaging.Resize(w.Mark, base.Bounds().Dx()/3, 0, imaging.Lanczos)
+				mark = Resize(w.Mark, ResizeOption{Width: base.Bounds().Dx() / 3})
 			} else {
-				mark = imaging.Resize(w.Mark, 0, base.Bounds().Dy()/3, imaging.Lanczos)
+				mark = Resize(w.Mark, ResizeOption{Height: base.Bounds().Dy() / 3})
 			}
 		} else {
 			mark = w.Mark

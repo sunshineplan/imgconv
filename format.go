@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/disintegration/imaging"
-	_ "github.com/sunshineplan/tiff" // decode tiff format
+	_ "github.com/sunshineplan/tiff" // decode tiff format, not check IFD tags order
 	_ "golang.org/x/image/bmp"       // decode bmp format
 	_ "golang.org/x/image/webp"      // decode webp format
 )
