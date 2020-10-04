@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image/draw"
 	"image/png"
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -25,15 +26,19 @@ func TestDecode(t *testing.T) {
 		"tif",
 		"bmp",
 		"webp",
+		"pdf",
 	}
 	for _, i := range format {
-		f, err := os.Open("testdata/video-001." + i)
+		b, err := ioutil.ReadFile("testdata/video-001." + i)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
-		if _, err := Decode(f); err != nil {
+		if _, err := Decode(bytes.NewBuffer(b)); err != nil {
 			t.Error("Failed to decode", i)
+		}
+		if _, err := DecodeConfig(bytes.NewBuffer(b)); err != nil {
+			t.Error("Failed to decode", i, "config")
 		}
 	}
 	if _, err := Decode(bytes.NewBufferString("Hello")); err == nil {

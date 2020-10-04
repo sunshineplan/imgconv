@@ -3,14 +3,13 @@ package imgconv
 import (
 	"image"
 	"image/draw"
-	_ "image/jpeg" // decode jpeg format
 	"image/png"
 	"io"
 	"os"
 
 	"github.com/disintegration/imaging"
+	_ "github.com/sunshineplan/pdf"  // decode pdf format
 	_ "github.com/sunshineplan/tiff" // decode tiff format, not check IFD tags order
-	_ "golang.org/x/image/bmp"       // decode bmp format
 	_ "golang.org/x/image/webp"      // decode webp format
 )
 
@@ -89,6 +88,13 @@ func setFormat(f string, options ...EncodeOption) (fo FormatOption, err error) {
 func Decode(r io.Reader) (image.Image, error) {
 	img, _, err := image.Decode(r)
 	return img, err
+}
+
+// DecodeConfig returns the color model and dimensions of a image without
+// decoding the entire image.
+func DecodeConfig(r io.Reader) (image.Config, error) {
+	cfg, _, err := image.DecodeConfig(r)
+	return cfg, err
 }
 
 // Open loads an image from file.
