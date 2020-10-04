@@ -9,7 +9,7 @@ import (
 
 const defaultOpacity = 128
 
-var defaultFormat = FormatOption{Format: JPEG, EncodeOption: []EncodeOption{JPEGQuality(75)}}
+var defaultFormat = FormatOption{Format: JPEG}
 
 // Options represents options that can be used to configure a image operation.
 type Options struct {
@@ -58,7 +58,7 @@ func (o *Options) Convert(w io.Writer, base image.Image) error {
 	if reflect.DeepEqual(o.Format, FormatOption{}) {
 		o.Format = defaultFormat
 	}
-	return o.Format.Write(w, base)
+	return o.Format.Encode(w, base)
 }
 
 // ConvertExt convert filename's ext according image format

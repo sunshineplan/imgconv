@@ -1,21 +1,24 @@
 package imgconv
 
 import (
+	"errors"
 	"image"
 	"image/draw"
+	"image/gif"
+	"image/jpeg"
 	"image/png"
 	"io"
-	"os"
+	"strings"
 
-	"github.com/disintegration/imaging"
-	_ "github.com/sunshineplan/pdf"  // decode pdf format
+	"github.com/hhrutter/tiff"
+	"github.com/sunshineplan/pdf"
 	_ "github.com/sunshineplan/tiff" // decode tiff format, not check IFD tags order
-	_ "golang.org/x/image/webp"      // decode webp format
+	"golang.org/x/image/bmp"
+	_ "golang.org/x/image/webp" // decode webp format
 )
 
 // Format is an image file format.
-// https://github.com/disintegration/imaging
-type Format imaging.Format
+type Format int
 
 // Image file formats.
 const (
@@ -24,6 +27,7 @@ const (
 	GIF
 	TIFF
 	BMP
+	PDF
 )
 
 var formatExts = map[Format]string{
@@ -32,6 +36,7 @@ var formatExts = map[Format]string{
 	GIF:  "gif",
 	TIFF: "tif",
 	BMP:  "bmp",
+	PDF:  "pdf",
 }
 
 // FormatOption is format option
@@ -40,93 +45,137 @@ type FormatOption struct {
 	EncodeOption []EncodeOption
 }
 
+type encodeConfig struct {
+	Quality             int
+	gifNumColors        int
+	gifQuantizer        draw.Quantizer
+	gifDrawer           draw.Drawer
+	pngCompressionLevel png.CompressionLevel
+	tiffCompressionType tiff.CompressionType
+}
+
+var defaultEncodeConfig = encodeConfig{
+	Quality:             75,
+	gifNumColors:        256,
+	gifQuantizer:        nil,
+	gifDrawer:           nil,
+	pngCompressionLevel: png.DefaultCompression,
+	tiffCompressionType: tiff.Deflate,
+}
+
 // EncodeOption sets an optional parameter for the Encode and Save functions.
 // https://github.com/disintegration/imaging
-type EncodeOption imaging.EncodeOption
+type EncodeOption func(*encodeConfig)
 
-// JPEGQuality returns an EncodeOption that sets the output JPEG quality.
+// Quality returns an EncodeOption that sets the output JPEG or PDF quality.
 // Quality ranges from 1 to 100 inclusive, higher is better.
-func JPEGQuality(quality int) EncodeOption {
-	return EncodeOption(imaging.JPEGQuality(quality))
+func Quality(quality int) EncodeOption {
+	return func(c *encodeConfig) {
+		c.Quality = quality
+	}
 }
 
 // GIFNumColors returns an EncodeOption that sets the maximum number of colors
 // used in the GIF-encoded image. It ranges from 1 to 256.  Default is 256.
 func GIFNumColors(numColors int) EncodeOption {
-	return EncodeOption(imaging.GIFNumColors(numColors))
+	return func(c *encodeConfig) {
+		c.gifNumColors = numColors
+	}
 }
 
 // GIFQuantizer returns an EncodeOption that sets the quantizer that is used to produce
 // a palette of the GIF-encoded image.
 func GIFQuantizer(quantizer draw.Quantizer) EncodeOption {
-	return EncodeOption(imaging.GIFQuantizer(quantizer))
+	return func(c *encodeConfig) {
+		c.gifQuantizer = quantizer
+	}
 }
 
 // GIFDrawer returns an EncodeOption that sets the drawer that is used to convert
 // the source image to the desired palette of the GIF-encoded image.
 func GIFDrawer(drawer draw.Drawer) EncodeOption {
-	return EncodeOption(imaging.GIFDrawer(drawer))
+	return func(c *encodeConfig) {
+		c.gifDrawer = drawer
+	}
 }
 
 // PNGCompressionLevel returns an EncodeOption that sets the compression level
 // of the PNG-encoded image. Default is png.DefaultCompression.
 func PNGCompressionLevel(level png.CompressionLevel) EncodeOption {
-	return EncodeOption(imaging.PNGCompressionLevel(level))
+	return func(c *encodeConfig) {
+		c.pngCompressionLevel = level
+	}
+}
+
+// TIFFCompressionType returns an EncodeOption that sets the compression type
+// of the TIFF-encoded image. Default is tiff.Deflate.
+func TIFFCompressionType(compressionType tiff.CompressionType) EncodeOption {
+	return func(c *encodeConfig) {
+		c.tiffCompressionType = compressionType
+	}
+}
+
+// FormatFromExtension parses image format from filename extension:
+// "jpg" (or "jpeg"), "png", "gif", "tif" (or "tiff"), "bmp" and "pdf" are supported.
+func FormatFromExtension(ext string) (Format, error) {
+	ext = strings.ToLower(ext)
+	for k, v := range formatExts {
+		if ext == v {
+			return k, nil
+		}
+	}
+	return -1, errors.New("unsupported image format")
 }
 
 func setFormat(f string, options ...EncodeOption) (fo FormatOption, err error) {
-	var format imaging.Format
-	if format, err = imaging.FormatFromExtension(f); err != nil {
+	var format Format
+	if format, err = FormatFromExtension(f); err != nil {
 		return
 	}
-	fo.Format = Format(format)
+	fo.Format = format
 	fo.EncodeOption = options
 	return
 }
 
-// Decode reads an image from r.
-func Decode(r io.Reader) (image.Image, error) {
-	img, _, err := image.Decode(r)
-	return img, err
-}
-
-// DecodeConfig returns the color model and dimensions of a image without
-// decoding the entire image.
-func DecodeConfig(r io.Reader) (image.Config, error) {
-	cfg, _, err := image.DecodeConfig(r)
-	return cfg, err
-}
-
-// Open loads an image from file.
-func Open(file string) (image.Image, error) {
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
+// Encode writes the image img to w in the specified format (JPEG, PNG, GIF, TIFF, BMP or PDF).
+func (f *FormatOption) Encode(w io.Writer, img image.Image) error {
+	cfg := defaultEncodeConfig
+	for _, option := range f.EncodeOption {
+		option(&cfg)
 	}
-	defer f.Close()
-	return Decode(f)
-}
 
-// Write image according format option
-func Write(w io.Writer, base image.Image, option FormatOption) error {
-	return option.Write(w, base)
-}
+	switch f.Format {
+	case JPEG:
+		if nrgba, ok := img.(*image.NRGBA); ok && nrgba.Opaque() {
+			rgba := &image.RGBA{
+				Pix:    nrgba.Pix,
+				Stride: nrgba.Stride,
+				Rect:   nrgba.Rect,
+			}
+			return jpeg.Encode(w, rgba, &jpeg.Options{Quality: cfg.Quality})
+		}
+		return jpeg.Encode(w, img, &jpeg.Options{Quality: cfg.Quality})
 
-// Save saves image according format option
-func Save(output string, base image.Image, option FormatOption) error {
-	f, err := os.Create(output)
-	if err != nil {
-		return err
+	case PNG:
+		encoder := png.Encoder{CompressionLevel: cfg.pngCompressionLevel}
+		return encoder.Encode(w, img)
+
+	case GIF:
+		return gif.Encode(w, img, &gif.Options{
+			NumColors: cfg.gifNumColors,
+			Quantizer: cfg.gifQuantizer,
+			Drawer:    cfg.gifDrawer,
+		})
+
+	case TIFF:
+		return tiff.Encode(w, img, &tiff.Options{Compression: cfg.tiffCompressionType, Predictor: true})
+
+	case BMP:
+		return bmp.Encode(w, img)
+
+	case PDF:
+		return pdf.Encode(w, []image.Image{img}, &pdf.Options{Quality: cfg.Quality})
 	}
-	defer f.Close()
-	return option.Write(f, base)
-}
 
-// Write image according format option
-func (f *FormatOption) Write(w io.Writer, base image.Image) error {
-	var opts []imaging.EncodeOption
-	for _, i := range f.EncodeOption {
-		opts = append(opts, imaging.EncodeOption(i))
-	}
-	return imaging.Encode(w, base, imaging.Format(f.Format), opts...)
+	return errors.New("unsupported image format")
 }

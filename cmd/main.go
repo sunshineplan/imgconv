@@ -47,9 +47,9 @@ func usage() {
   --dst
 		destination directory (default: output)
   --format
-		output format (jpg, jpeg, png, gif, tif, tiff and bmp are supported, default: jpg)
+		output format (jpg, jpeg, png, gif, tif, tiff, bmp and pdf are supported, default: jpg)
   --quality
-		set jpeg quality (range 1-100, default: 75)
+		set jpeg or pdf quality (range 1-100, default: 75)
   --watermark
 		watermark path
   --opacity
@@ -99,7 +99,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := task.SetFormat(format, imgconv.JPEGQuality(quality)); err != nil {
+	if err := task.SetFormat(format, imgconv.Quality(quality)); err != nil {
 		log.Fatal(err)
 	}
 	if watermark != "" {
@@ -135,7 +135,8 @@ func main() {
 	case mode.IsDir():
 		var images []string
 		filepath.Walk(src, func(path string, _ os.FileInfo, _ error) error {
-			if ok, _ := regexp.MatchString(`^\.(jpe?g|png|gif|tiff?|bmp)$`, strings.ToLower(filepath.Ext(path))); ok {
+			if ok, _ := regexp.MatchString(`^\.(jpe?g|png|gif|tiff?|bmp|pdf|webp)$`,
+				strings.ToLower(filepath.Ext(path))); ok {
 				images = append(images, path)
 			}
 			return nil
@@ -167,7 +168,7 @@ func main() {
 				log.Print(err)
 				return
 			}
-			if err := task.Convert(base, f); err != nil {
+			if err := task.Convert(f, base); err != nil {
 				log.Println(i, err)
 				f.Close()
 				os.Remove(output)
@@ -195,7 +196,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := task.Convert(base, f); err != nil {
+		if err := task.Convert(f, base); err != nil {
 			f.Close()
 			os.Remove(output)
 			log.Fatal(err)

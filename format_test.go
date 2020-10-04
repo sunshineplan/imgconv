@@ -2,11 +2,13 @@ package imgconv
 
 import (
 	"bytes"
+	"image"
 	"image/draw"
 	"image/png"
 	"io/ioutil"
-	"os"
 	"testing"
+
+	"github.com/hhrutter/tiff"
 )
 
 func TestSetFormat(t *testing.T) {
@@ -18,41 +20,14 @@ func TestSetFormat(t *testing.T) {
 	}
 }
 
-func TestDecode(t *testing.T) {
-	var format = []string{
-		"jpg",
-		"png",
-		"gif",
-		"tif",
-		"bmp",
-		"webp",
-		"pdf",
-	}
-	for _, i := range format {
-		b, err := ioutil.ReadFile("testdata/video-001." + i)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-		if _, err := Decode(bytes.NewBuffer(b)); err != nil {
-			t.Error("Failed to decode", i)
-		}
-		if _, err := DecodeConfig(bytes.NewBuffer(b)); err != nil {
-			t.Error("Failed to decode", i, "config")
-		}
-	}
-	if _, err := Decode(bytes.NewBufferString("Hello")); err == nil {
-		t.Error("Decode string want error")
-	}
-}
-
 func TestEncode(t *testing.T) {
 	testCase := []FormatOption{
-		{Format: JPEG, EncodeOption: []EncodeOption{JPEGQuality(75)}},
+		{Format: JPEG, EncodeOption: []EncodeOption{Quality(75)}},
 		{Format: PNG, EncodeOption: []EncodeOption{PNGCompressionLevel(png.DefaultCompression)}},
 		{Format: GIF, EncodeOption: []EncodeOption{GIFNumColors(256), GIFDrawer(draw.FloydSteinberg), GIFQuantizer(nil)}},
-		{Format: TIFF},
+		{Format: TIFF, EncodeOption: []EncodeOption{TIFFCompressionType(tiff.LZW)}},
 		{Format: BMP},
+		{Format: PDF, EncodeOption: []EncodeOption{Quality(75)}},
 	}
 
 	// Read the image.
@@ -69,7 +44,7 @@ func TestEncode(t *testing.T) {
 			t.Error(tc, err)
 			continue
 		}
-		if err := Write(&buf, m0, fo); err != nil {
+		if err := fo.Encode(&buf, m0); err != nil {
 			t.Error(formatExts[fo.Format], err)
 			continue
 		}
@@ -84,28 +59,13 @@ func TestEncode(t *testing.T) {
 			continue
 		}
 	}
-}
-
-func TestOpenSave(t *testing.T) {
-	if _, err := Open("/invalid/path"); err == nil {
-		t.Error("Open invalid path want error")
+	if err := (&FormatOption{}).Encode(ioutil.Discard, &image.NRGBA{
+		Rect:   image.Rect(0, 0, 1, 1),
+		Stride: 1 * 4,
+		Pix:    []uint8{0xff, 0xff, 0xff, 0xff}}); err != nil {
+		t.Error("encode image error")
 	}
-	if _, err := Open("build.bat"); err == nil {
-		t.Error("Open invalid image want error")
-	}
-	img, err := Open("testdata/video-001.png")
-	if err != nil {
-		t.Error("Fail to open image", err)
-		return
-	}
-	if err := Save("/invalid/path", img, defaultFormat); err == nil {
-		t.Error("Save invalid path want error")
-	}
-	if err := Save("testdata/tmp", img, defaultFormat); err != nil {
-		t.Error("Fail to save image", err)
-		return
-	}
-	if err := os.Remove("testdata/tmp"); err != nil {
-		t.Error(err)
+	if err := (&FormatOption{Format: -1}).Encode(ioutil.Discard, m0); err == nil {
+		t.Error("encode unsupported format expect an error")
 	}
 }
