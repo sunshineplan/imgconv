@@ -69,7 +69,7 @@ func TestEncode(t *testing.T) {
 			t.Error(tc, err)
 			continue
 		}
-		if err := Write(m0, &buf, fo); err != nil {
+		if err := Write(&buf, m0, fo); err != nil {
 			t.Error(formatExts[fo.Format], err)
 			continue
 		}
@@ -98,10 +98,10 @@ func TestOpenSave(t *testing.T) {
 		t.Error("Fail to open image", err)
 		return
 	}
-	if err := Save(img, "/invalid/path", defaultFormat); err == nil {
+	if err := Save("/invalid/path", img, defaultFormat); err == nil {
 		t.Error("Save invalid path want error")
 	}
-	if err := Save(img, "testdata/tmp", defaultFormat); err != nil {
+	if err := Save("testdata/tmp", img, defaultFormat); err != nil {
 		t.Error("Fail to save image", err)
 		return
 	}

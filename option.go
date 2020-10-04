@@ -47,7 +47,7 @@ func (o *Options) SetFormat(f string, options ...EncodeOption) (err error) {
 }
 
 // Convert image by options
-func (o *Options) Convert(base image.Image, w io.Writer) error {
+func (o *Options) Convert(w io.Writer, base image.Image) error {
 	if o.Resize != nil {
 		base = o.Resize.do(base)
 	}
@@ -58,7 +58,7 @@ func (o *Options) Convert(base image.Image, w io.Writer) error {
 	if reflect.DeepEqual(o.Format, FormatOption{}) {
 		o.Format = defaultFormat
 	}
-	return o.Format.Write(base, w)
+	return o.Format.Write(w, base)
 }
 
 // ConvertExt convert filename's ext according image format

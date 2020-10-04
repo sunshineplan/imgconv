@@ -108,22 +108,22 @@ func Open(file string) (image.Image, error) {
 }
 
 // Write image according format option
-func Write(base image.Image, w io.Writer, option FormatOption) error {
-	return option.Write(base, w)
+func Write(w io.Writer, base image.Image, option FormatOption) error {
+	return option.Write(w, base)
 }
 
 // Save saves image according format option
-func Save(base image.Image, output string, option FormatOption) error {
+func Save(output string, base image.Image, option FormatOption) error {
 	f, err := os.Create(output)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	return option.Write(base, f)
+	return option.Write(f, base)
 }
 
 // Write image according format option
-func (f *FormatOption) Write(base image.Image, w io.Writer) error {
+func (f *FormatOption) Write(w io.Writer, base image.Image) error {
 	var opts []imaging.EncodeOption
 	for _, i := range f.EncodeOption {
 		opts = append(opts, imaging.EncodeOption(i))

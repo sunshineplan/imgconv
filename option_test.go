@@ -36,7 +36,7 @@ func TestOption(t *testing.T) {
 	if o.Resize.Width != 0 || o.Resize.Height != 0 || o.Resize.Percent != 33 {
 		t.Error("SetResize result is not expect one.")
 	}
-	if err := o.Convert(mark, ioutil.Discard); err != nil {
+	if err := o.Convert(ioutil.Discard, mark); err != nil {
 		t.Error("Failed to Convert.")
 	}
 }
@@ -49,11 +49,11 @@ func TestConvert(t *testing.T) {
 	}
 	var buf1, buf2 bytes.Buffer
 	o := New()
-	if err := o.Convert(base, &buf1); err != nil {
+	if err := o.Convert(&buf1, base); err != nil {
 		t.Error("Failed to Convert.")
 	}
 	o = Options{Format: FormatOption{}}
-	if err := o.Convert(base, &buf2); err != nil {
+	if err := o.Convert(&buf2, base); err != nil {
 		t.Error("Failed to Convert.")
 	}
 	if !reflect.DeepEqual(buf1, buf2) {
