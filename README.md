@@ -17,6 +17,7 @@ as an input, include jpg(jpeg), png, gif, tif(tiff) ,bmp ,webp(decode only) and 
 
 ## Installation
 
+	Required go version for building: go1.15 and up
     go get -u github.com/sunshineplan/imgconv
 
 ## Documentation
@@ -32,6 +33,8 @@ https://pkg.go.dev/github.com/sunshineplan/imgconv
 This repo relies on the following third-party projects:
 
   * [disintegration/imaging](https://github.com/disintegration/imaging)
+  * [pdfcpu/pdfcpu](https://github.com/pdfcpu/pdfcpu)
+  * [hhrutter/tiff](https://github.com/hhrutter/tiff)
 
 ## Usage examples
 
