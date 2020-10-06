@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hhrutter/tiff"
 	"github.com/sunshineplan/imgconv"
 	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/workers"
@@ -22,6 +23,7 @@ var self string
 var src, dst string
 var format string
 var quality int
+var compression string
 var watermark string
 var opacity uint
 var random bool
@@ -50,6 +52,8 @@ func usage() {
 		output format (jpg, jpeg, png, gif, tif, tiff, bmp and pdf are supported, default: jpg)
   --quality
 		set jpeg or pdf quality (range 1-100, default: 75)
+  --compression
+		set tiff compression type (none, lzw, deflate, default: lzw)
   --watermark
 		watermark path
   --opacity
@@ -72,6 +76,7 @@ func main() {
 	flag.StringVar(&dst, "dst", "output", "")
 	flag.StringVar(&format, "format", "jpg", "")
 	flag.IntVar(&quality, "quality", 75, "")
+	flag.StringVar(&compression, "compression", "lzw", "")
 	flag.StringVar(&watermark, "watermark", "", "")
 	flag.UintVar(&opacity, "opacity", 128, "")
 	flag.BoolVar(&random, "random", false, "")
@@ -99,7 +104,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := task.SetFormat(format, imgconv.Quality(quality)); err != nil {
+	var ct tiff.CompressionType
+	switch strings.ToLower(compression) {
+	case "none":
+		ct = tiff.Uncompressed
+	case "lzw":
+		ct = tiff.LZW
+	case "deflate":
+		ct = tiff.Deflate
+	default:
+		log.Fatalln("Unknown tiff compression type:", ct)
+	}
+	if err := task.SetFormat(format, imgconv.Quality(quality), imgconv.TIFFCompressionType(ct)); err != nil {
 		log.Fatal(err)
 	}
 	if watermark != "" {
