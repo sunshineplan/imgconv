@@ -160,8 +160,9 @@ func main() {
 		total := len(images)
 		log.Println("Total images:", total)
 		start := time.Now()
+		c := make(chan bool, 1)
 		var count int
-		go progressbar.New().Start(total, &count)
+		go progressbar.New(c).Start(total, &count)
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
 			defer func() { count++ }()
 			rel, _ := filepath.Rel(src, i.(string))
@@ -195,6 +196,7 @@ func main() {
 				log.Printf("[Debug]Converted %s\n", i.(string))
 			}
 		})
+		<-c
 		log.Println("Job done! Elapsed time:", time.Since(start))
 	case mode.IsRegular():
 		output := task.ConvertExt(filepath.Join(dst, filepath.Base(src)))
