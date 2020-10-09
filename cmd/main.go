@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hhrutter/tiff"
@@ -160,11 +161,16 @@ func main() {
 		total := len(images)
 		log.Println("Total images:", total)
 		start := time.Now()
+		var m sync.Mutex
 		c := make(chan bool, 1)
 		var count int
 		go progressbar.New(c).Start(total, &count)
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
-			defer func() { count++ }()
+			defer func() {
+				m.Lock()
+				count++
+				m.Unlock()
+			}()
 			rel, _ := filepath.Rel(src, i.(string))
 			output := task.ConvertExt(filepath.Join(dst, rel))
 			if _, err := os.Stat(output); !os.IsNotExist(err) {
