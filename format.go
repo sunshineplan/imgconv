@@ -10,9 +10,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/hhrutter/tiff"
 	"github.com/sunshineplan/pdf"
-	_ "github.com/sunshineplan/tiff" // decode tiff format, not check IFD tags order
+	"github.com/sunshineplan/tiff" // decode tiff format, not check IFD tags order
 	"golang.org/x/image/bmp"
 	_ "golang.org/x/image/webp" // decode webp format
 )

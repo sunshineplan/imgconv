@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hhrutter/tiff"
 	"github.com/sunshineplan/imgconv"
+	"github.com/sunshineplan/tiff"
 	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/workers"
 	"github.com/vharitonsky/iniflags"

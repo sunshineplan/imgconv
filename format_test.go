@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/hhrutter/tiff"
+	"github.com/sunshineplan/tiff"
 )
 
 func TestSetFormat(t *testing.T) {
