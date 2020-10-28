@@ -220,7 +220,11 @@ func main() {
 			log.Fatal(err)
 		}
 		f.Close()
+		fmt.Print("Done. ")
 	default:
 		log.Fatal("Unknown source.")
 	}
+
+	fmt.Println("Press enter key to continue . . .")
+	fmt.Scanln()
 }
