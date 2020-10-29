@@ -1,12 +1,12 @@
 # Image Converter
 
 [![GoDev](https://img.shields.io/static/v1?label=godev&message=reference&color=00add8)][godev]
-[![BuildStatus](https://travis-ci.org/sunshineplan/imgconv.svg?branch=master)][travis]
+[![Go](https://github.com/sunshineplan/imgconv/workflows/Test/badge.svg)][actions]
 [![CoverageStatus](https://coveralls.io/repos/github/sunshineplan/imgconv/badge.svg?branch=master&service=github)][coveralls]
 [![GoReportCard](https://goreportcard.com/badge/github.com/sunshineplan/imgconv)][goreportcard]
 
 [godev]: https://pkg.go.dev/github.com/sunshineplan/imgconv
-[travis]: https://travis-ci.org/sunshineplan/imgconv
+[actions]: https://github.com/sunshineplan/imgconv/actions "GitHub Actions Page"
 [coveralls]: https://coveralls.io/github/sunshineplan/imgconv?branch=master
 [goreportcard]: https://goreportcard.com/report/github.com/sunshineplan/imgconv
 
