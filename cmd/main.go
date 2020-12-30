@@ -160,8 +160,7 @@ func main() {
 		total := len(images)
 		log.Println("Total images:", total)
 		start := time.Now()
-		done := make(chan bool, 1)
-		pb := progressbar.New(total, done)
+		pb := progressbar.New(total)
 		pb.Start()
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
 			defer pb.Add(1)
@@ -196,7 +195,7 @@ func main() {
 				log.Printf("[Debug]Converted %s\n", i.(string))
 			}
 		})
-		<-done
+		<-pb.Done
 		log.Println("Job done! Elapsed time:", time.Since(start))
 	case mode.IsRegular():
 		output := task.ConvertExt(filepath.Join(dst, filepath.Base(src)))
