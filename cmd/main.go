@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -156,17 +157,48 @@ func main() {
 
 	switch mode := si.Mode(); {
 	case mode.IsDir():
+		var message string
+		var lastPath string
+		var lastWidth int
 		var images []string
-		filepath.Walk(src, func(path string, _ os.FileInfo, _ error) error {
+
+		ticker := time.NewTicker(time.Second)
+		done := make(chan bool)
+		go func() {
+			for {
+				select {
+				case <-done:
+					ticker.Stop()
+					return
+				case <-ticker.C:
+					m := message
+					io.WriteString(
+						os.Stderr,
+						fmt.Sprintf("\r%s\r%s", strings.Repeat(" ", lastWidth), m),
+					)
+					lastWidth = len(m)
+				}
+			}
+		}()
+
+		filepath.WalkDir(src, func(path string, d fs.DirEntry, _ error) error {
 			if ok, _ := regexp.MatchString(`^\.(jpe?g|png|gif|tiff?|bmp|pdf|webp)$`,
-				strings.ToLower(filepath.Ext(path))); ok {
+				strings.ToLower(filepath.Ext(d.Name()))); ok {
 				images = append(images, path)
 			}
+
+			if d.IsDir() {
+				lastPath = filepath.Dir(path)
+			}
+			message = fmt.Sprintf("Found images: %d, Scanning directory %s", len(images), lastPath)
+
 			return nil
 		})
+		done <- true
 
 		total := len(images)
 
+		io.WriteString(os.Stderr, fmt.Sprintf("\r%s\r", strings.Repeat(" ", lastWidth)))
 		log.Println("Total images:", total)
 
 		pb := progressbar.New(total)
