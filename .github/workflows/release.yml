@@ -48,32 +48,19 @@ jobs:
               ref: 'tags/v1.0'
             })
 
-      - name: Get Current Date
-        id: date
-        run: echo "::set-output name=date::$(TZ=CST date +'%Y-%m-%d')"
+      - name: Build
+        id: build
+        run: |
+          GOOS=windows go build -ldflags "-s -w" -o converter.exe ./cmd 
+          echo "::set-output name=date::$(TZ=CST date +'%Y-%m-%d')"
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v1.0
-          release_name: ${{ steps.date.outputs.date }}
-          body: ${{ steps.date.outputs.date }}
-          draft: false
-          prerelease: false
-
-      - name: Build
-        run: |
-          GOOS=windows go build -ldflags "-s -w" -o converter.exe ./cmd 
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./converter.exe
-          asset_name: converter.exe
-          asset_content_type: application/vnd.microsoft.portable-executable
+          name: ${{ steps.build.outputs.date }}
+          body: ${{ steps.build.outputs.date }}
+          files: converter.exe
