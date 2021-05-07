@@ -98,12 +98,14 @@ func main() {
 		log.Fatalf("Failed to open log file: %v", err)
 	}
 	defer f.Close()
+
 	log.SetOutput(io.MultiWriter(f, os.Stdout))
 
 	task := imgconv.New()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	var ct tiff.CompressionType
 	switch strings.ToLower(compression) {
 	case "none":
@@ -115,9 +117,11 @@ func main() {
 	default:
 		log.Fatalln("Unknown tiff compression type:", ct)
 	}
+
 	if err := task.SetFormat(format, imgconv.Quality(quality), imgconv.TIFFCompressionType(ct)); err != nil {
 		log.Fatal(err)
 	}
+
 	if watermark != "" {
 		mark, err := imgconv.Open(watermark)
 		if err != nil {
@@ -134,6 +138,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	di, err := os.Stat(dst)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -144,9 +149,11 @@ func main() {
 		} else {
 			log.Fatal(err)
 		}
-	} else if !di.Mode().IsDir() {
+	}
+	if !di.Mode().IsDir() {
 		log.Fatal("Destination is not a directory.")
 	}
+
 	switch mode := si.Mode(); {
 	case mode.IsDir():
 		var images []string
@@ -157,13 +164,16 @@ func main() {
 			}
 			return nil
 		})
+
 		total := len(images)
+
 		log.Println("Total images:", total)
-		start := time.Now()
+
 		pb := progressbar.New(total)
 		pb.Start()
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
 			defer pb.Add(1)
+
 			rel, _ := filepath.Rel(src, i.(string))
 			output := task.ConvertExt(filepath.Join(dst, rel))
 			if _, err := os.Stat(output); !os.IsNotExist(err) {
@@ -174,52 +184,60 @@ func main() {
 				log.Print(err)
 				return
 			}
+
 			base, err := imgconv.Open(i.(string))
 			if err != nil {
 				log.Println(i, err)
 				return
 			}
+
 			f, err := os.Create(output)
 			if err != nil {
 				log.Print(err)
 				return
 			}
+
 			if err := task.Convert(f, base); err != nil {
 				log.Println(i, err)
-				f.Close()
-				os.Remove(output)
+				defer os.Remove(output)
 				return
 			}
-			f.Close()
+			defer f.Close()
+
 			if debug {
 				log.Printf("[Debug]Converted %s\n", i.(string))
 			}
 		})
 		<-pb.Done
-		log.Println("Job done! Elapsed time:", time.Since(start))
+
 	case mode.IsRegular():
 		output := task.ConvertExt(filepath.Join(dst, filepath.Base(src)))
+
 		if _, err := os.Stat(output); !os.IsNotExist(err) {
 			log.Fatal("Destination already exist.")
 		}
 		if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
 			log.Fatal(err)
 		}
+
 		base, err := imgconv.Open(src)
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		f, err := os.Create(output)
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		if err := task.Convert(f, base); err != nil {
-			f.Close()
-			os.Remove(output)
+			defer os.Remove(output)
 			log.Fatal(err)
 		}
-		f.Close()
-		fmt.Print("Done. ")
+		defer f.Close()
+
+		log.Print("Done.")
+
 	default:
 		log.Fatal("Unknown source.")
 	}

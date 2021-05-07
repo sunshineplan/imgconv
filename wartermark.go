@@ -37,7 +37,7 @@ func (w *WatermarkOption) SetOffset(offset image.Point) *WatermarkOption {
 
 func (w *WatermarkOption) do(base image.Image) image.Image {
 	output := image.NewRGBA(base.Bounds())
-	draw.Draw(output, output.Bounds(), base, image.ZP, draw.Src)
+	draw.Draw(output, output.Bounds(), base, image.Point{}, draw.Src)
 	var offset image.Point
 	var mark image.Image
 	if w.Random {
@@ -61,7 +61,7 @@ func (w *WatermarkOption) do(base image.Image) image.Image {
 			(base.Bounds().Dx()/2)-(mark.Bounds().Dx()/2)+w.Offset.X,
 			(base.Bounds().Dy()/2)-(mark.Bounds().Dy()/2)+w.Offset.Y)
 	}
-	draw.DrawMask(output, mark.Bounds().Add(offset), mark, image.ZP, image.NewUniform(color.Alpha{w.Opacity}), image.ZP, draw.Over)
+	draw.DrawMask(output, mark.Bounds().Add(offset), mark, image.Point{}, image.NewUniform(color.Alpha{w.Opacity}), image.Point{}, draw.Over)
 	return output
 }
 
@@ -70,8 +70,5 @@ func randRange(min, max int) int {
 }
 
 func calcResizeXY(base, mark image.Rectangle) bool {
-	if base.Dx()*mark.Dy()/mark.Dx() < base.Dy() {
-		return true
-	}
-	return false
+	return base.Dx()*mark.Dy()/mark.Dx() < base.Dy()
 }

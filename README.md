@@ -76,7 +76,7 @@ imgconv.Write(srcImage, dstWriter, imgconv.FormatOption{Format: imgconv.JPEG})
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 
 	"github.com/sunshineplan/imgconv"
@@ -96,7 +96,7 @@ func main() {
 	dst := imgconv.Watermark(src, imgconv.WatermarkOption{Mark: mark, Opacity: 128, Random: true})
 
 	// Write the resulting image as TIFF.
-	err = imgconv.Write(ioutil.Discard, dst, imgconv.FormatOption{Format: imgconv.TIFF})
+	err = imgconv.Write(io.Discard, dst, imgconv.FormatOption{Format: imgconv.TIFF})
 	if err != nil {
 		log.Fatalf("failed to write image: %v", err)
 	}

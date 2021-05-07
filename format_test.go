@@ -5,7 +5,7 @@ import (
 	"image"
 	"image/draw"
 	"image/png"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/sunshineplan/tiff"
@@ -59,13 +59,13 @@ func TestEncode(t *testing.T) {
 			continue
 		}
 	}
-	if err := (&FormatOption{}).Encode(ioutil.Discard, &image.NRGBA{
+	if err := (&FormatOption{}).Encode(io.Discard, &image.NRGBA{
 		Rect:   image.Rect(0, 0, 1, 1),
 		Stride: 1 * 4,
 		Pix:    []uint8{0xff, 0xff, 0xff, 0xff}}); err != nil {
 		t.Error("encode image error")
 	}
-	if err := (&FormatOption{Format: -1}).Encode(ioutil.Discard, m0); err == nil {
+	if err := (&FormatOption{Format: -1}).Encode(io.Discard, m0); err == nil {
 		t.Error("encode unsupported format expect an error")
 	}
 }

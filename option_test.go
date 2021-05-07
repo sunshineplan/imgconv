@@ -3,7 +3,7 @@ package imgconv
 import (
 	"bytes"
 	"image"
-	"io/ioutil"
+	"io"
 	"reflect"
 	"testing"
 )
@@ -36,7 +36,7 @@ func TestOption(t *testing.T) {
 	if o.Resize.Width != 0 || o.Resize.Height != 0 || o.Resize.Percent != 33 {
 		t.Error("SetResize result is not expect one.")
 	}
-	if err := o.Convert(ioutil.Discard, mark); err != nil {
+	if err := o.Convert(io.Discard, mark); err != nil {
 		t.Error("Failed to Convert.")
 	}
 }

@@ -2,7 +2,7 @@ package imgconv
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 )
@@ -18,7 +18,7 @@ func TestDecodeWrite(t *testing.T) {
 		"pdf",
 	}
 	for _, i := range format {
-		b, err := ioutil.ReadFile("testdata/video-001." + i)
+		b, err := os.ReadFile("testdata/video-001." + i)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -27,7 +27,7 @@ func TestDecodeWrite(t *testing.T) {
 		if err != nil {
 			t.Error("Failed to decode", i)
 		}
-		if err := Write(ioutil.Discard, img, FormatOption{}); err != nil {
+		if err := Write(io.Discard, img, FormatOption{}); err != nil {
 			t.Error("Failed to write", i)
 		}
 		if _, err := DecodeConfig(bytes.NewBuffer(b)); err != nil {
