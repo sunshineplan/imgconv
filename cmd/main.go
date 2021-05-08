@@ -201,7 +201,7 @@ func main() {
 		io.WriteString(os.Stderr, fmt.Sprintf("\r%s\r", strings.Repeat(" ", lastWidth)))
 		log.Println("Total images:", total)
 
-		pb := progressbar.New(total)
+		pb := progressbar.New(total).SetWidth(40)
 		pb.Start()
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
 			defer pb.Add(1)
@@ -231,7 +231,8 @@ func main() {
 
 			if err := task.Convert(f, base); err != nil {
 				log.Println(i, err)
-				defer os.Remove(output)
+				f.Close()
+				os.Remove(output)
 				return
 			}
 			defer f.Close()
