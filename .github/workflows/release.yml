@@ -21,7 +21,7 @@ jobs:
           go-version: '1.x'
 
       - name: Delete Old Release
-        uses: actions/github-script@v3
+        uses: actions/github-script@v4
         with:
           script: |
             let release
@@ -52,7 +52,7 @@ jobs:
         id: build
         run: |
           GOOS=windows go build -ldflags "-s -w" -o converter.exe ./cmd 
-          echo "::set-output name=date::$(TZ=CST date +'%Y-%m-%d')"
+          echo "::set-output name=date::$(TZ=PRC date +'%Y-%m-%d')"
 
       - name: Create Release
         id: create_release

@@ -241,7 +241,7 @@ func main() {
 				log.Printf("[Debug]Converted %s\n", i.(string))
 			}
 		})
-		<-pb.Done
+		pb.Done()
 
 	case mode.IsRegular():
 		output := task.ConvertExt(filepath.Join(dst, filepath.Base(src)))
