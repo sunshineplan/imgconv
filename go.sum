@@ -8,10 +8,11 @@ github.com/sunshineplan/pdf v0.0.0-20201027030751-7a3eebdcee13 h1:rPRgECfeRx5NAY
 github.com/sunshineplan/pdf v0.0.0-20201027030751-7a3eebdcee13/go.mod h1:ehb4BbdtUQgMqvTt/CX2NrXb32ldvxz4QpYzehMXzwo=
 github.com/sunshineplan/pdfcpu v0.0.0-20201027070503-47c59f233094 h1:rGITrr9dXDGsGJx2GNc9rraaE9Cn3hzsDU6MIQxgX9Q=
 github.com/sunshineplan/pdfcpu v0.0.0-20201027070503-47c59f233094/go.mod h1:sfXycrGRx3Hn2YrCx9u11PT9AeTk2XRC2BDXWOHi+fg=
-github.com/sunshineplan/tiff v0.0.0-20201027015431-cb6e874082a1 h1:+hKNe4FIB8O7j9MnQwoSVyFIKeUyIosl2KSK9GTcLw8=
 github.com/sunshineplan/tiff v0.0.0-20201027015431-cb6e874082a1/go.mod h1:O+Ar7ouRbdfxLgoZLFz447/dvdM1NVKk1VpOQaijvAU=
-github.com/sunshineplan/utils v0.0.0-20210624055436-282dca1240dc h1:rJ5oUy7a1VSN5QiQgCUIFwiGQLwoj7UFKBEzJLdU9Dg=
-github.com/sunshineplan/utils v0.0.0-20210624055436-282dca1240dc/go.mod h1:fJ8/Fjbd50RwQ8/wxBmBgkuDHfcXrCJu6c/iRsgkYok=
+github.com/sunshineplan/tiff v0.0.0-20210706064715-e3a417825d1c h1:hEqsRr+iwpgRYLej/ryX9Rlyy606eg/sOiCv9+JllkM=
+github.com/sunshineplan/tiff v0.0.0-20210706064715-e3a417825d1c/go.mod h1:O+Ar7ouRbdfxLgoZLFz447/dvdM1NVKk1VpOQaijvAU=
+github.com/sunshineplan/utils v0.0.0-20210702023622-3a85180ea857 h1:xcPjhHSxrh4rR47SZsbS6lztkaG/Cn21NK/Ys0/GdNM=
+github.com/sunshineplan/utils v0.0.0-20210702023622-3a85180ea857/go.mod h1:fJ8/Fjbd50RwQ8/wxBmBgkuDHfcXrCJu6c/iRsgkYok=
 github.com/vharitonsky/iniflags v0.0.0-20180513140207-a33cd0b5f3de h1:fkw+7JkxF3U1GzQoX9h69Wvtvxajo5Rbzy6+YMMzPIg=
 github.com/vharitonsky/iniflags v0.0.0-20180513140207-a33cd0b5f3de/go.mod h1:irMhzlTz8+fVFj6CH2AN2i+WI5S6wWFtK3MBCIxIpyI=
 golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
