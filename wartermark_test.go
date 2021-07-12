@@ -24,21 +24,22 @@ func TestWatermark(t *testing.T) {
 	// Read the image.
 	sample, err := Open("testdata/video-001.png")
 	if err != nil {
-		t.Error("testdata/video-001.png", err)
-		return
+		t.Fatal("testdata/video-001.png", err)
 	}
 
 	m0 := (&WatermarkOption{Mark: mark, Opacity: 50}).SetOffset(image.Pt(5, 5)).do(sample)
 	m1 := Watermark(sample, WatermarkOption{Mark: mark, Opacity: 50, Offset: image.Pt(5, 5)})
 	if !reflect.DeepEqual(m0, m1) {
-		t.Error("Fixed Watermark got different images")
+		t.Fatal("Fixed Watermark got different images")
 	}
+
 	m0 = (&WatermarkOption{Mark: mark, Opacity: 50}).SetRandom(true).do(sample)
 	time.Sleep(time.Nanosecond)
 	m1 = (&WatermarkOption{Mark: mark, Opacity: 50, Random: true}).do(sample)
 	if reflect.DeepEqual(m0, m1) {
-		t.Error("Random Watermark got same images")
+		t.Fatal("Random Watermark got same images")
 	}
+
 	(&WatermarkOption{Mark: sample, Random: true}).do(sample)
 	(&WatermarkOption{Mark: sample, Random: true}).do(imaging.Rotate90(sample))
 }
@@ -52,6 +53,7 @@ func TestCalcResizeXY(t *testing.T) {
 		{image.Rect(0, 0, 100, 50), image.Rect(0, 0, 200, 200), false},
 		{image.Rect(0, 0, 50, 100), image.Rect(0, 0, 200, 200), true},
 	}
+
 	for _, tc := range testCase {
 		if calcResizeXY(tc.base, tc.mark) != tc.want {
 			t.Errorf("Want %v, got %v", tc.want, !tc.want)

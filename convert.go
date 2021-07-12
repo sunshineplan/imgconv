@@ -1,22 +1,34 @@
 package imgconv
 
 import (
+	"bytes"
 	"image"
 	"io"
 	"os"
+
+	"github.com/sunshineplan/tiff"
 )
 
 // Decode reads an image from r.
 func Decode(r io.Reader) (image.Image, error) {
-	img, _, err := image.Decode(r)
+	b, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
+	img, format, err := image.Decode(bytes.NewBuffer(b))
+	if format == "tiff" && err != nil {
+		img, err = tiff.Decode(bytes.NewBuffer(b))
+	}
+
 	return img, err
 }
 
 // DecodeConfig returns the color model and dimensions of a image without
 // decoding the entire image.
-func DecodeConfig(r io.Reader) (image.Config, error) {
-	cfg, _, err := image.DecodeConfig(r)
-	return cfg, err
+func DecodeConfig(r io.Reader) (cfg image.Config, err error) {
+	cfg, _, err = image.DecodeConfig(r)
+	return
 }
 
 // Open loads an image from file.
@@ -26,6 +38,7 @@ func Open(file string) (image.Image, error) {
 		return nil, err
 	}
 	defer f.Close()
+
 	return Decode(f)
 }
 
@@ -41,5 +54,6 @@ func Save(output string, base image.Image, option FormatOption) error {
 		return err
 	}
 	defer f.Close()
+
 	return option.Encode(f, base)
 }

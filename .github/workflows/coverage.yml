@@ -20,16 +20,11 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
-      - name: Install dependencies
-        run: go mod download
-
-      - name: Run Unit tests
-        run: go test -race -covermode atomic -coverprofile=covprofile ./...
-
-      - name: Install goveralls
-        run: go get github.com/mattn/goveralls
-
       - name: Send coverage
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: goveralls -coverprofile=covprofile -service=github
+        run: |
+          go mod download
+          go test -race -covermode atomic -coverprofile=covprofile ./...
+          go get github.com/mattn/goveralls
+          goveralls -coverprofile=covprofile -service=github

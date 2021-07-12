@@ -18,50 +18,52 @@ type Options struct {
 	Format    FormatOption
 }
 
-// New return a default option.
-func New() Options {
+// NewOptions creates a new option with default setting.
+func NewOptions() Options {
 	return Options{Format: defaultFormat}
 }
 
 // SetWatermark sets the value for the Watermark field.
-func (o *Options) SetWatermark(mark image.Image, opacity uint) *Options {
-	o.Watermark = &WatermarkOption{Mark: mark}
+func (opts *Options) SetWatermark(mark image.Image, opacity uint) *Options {
+	opts.Watermark = &WatermarkOption{Mark: mark}
 	if opacity == 0 {
-		o.Watermark.Opacity = defaultOpacity
+		opts.Watermark.Opacity = defaultOpacity
 	} else {
-		o.Watermark.Opacity = uint8(opacity)
+		opts.Watermark.Opacity = uint8(opacity)
 	}
-	return o
+
+	return opts
 }
 
 // SetResize sets the value for the Resize field.
-func (o *Options) SetResize(width, height int, percent float64) *Options {
-	o.Resize = &ResizeOption{Width: width, Height: height, Percent: percent}
-	return o
+func (opts *Options) SetResize(width, height int, percent float64) *Options {
+	opts.Resize = &ResizeOption{Width: width, Height: height, Percent: percent}
+	return opts
 }
 
 // SetFormat sets the value for the Format field.
-func (o *Options) SetFormat(f string, options ...EncodeOption) (err error) {
-	o.Format, err = setFormat(f, options...)
+func (opts *Options) SetFormat(f string, options ...EncodeOption) (err error) {
+	opts.Format, err = setFormat(f, options...)
 	return
 }
 
-// Convert image by options
-func (o *Options) Convert(w io.Writer, base image.Image) error {
-	if o.Resize != nil {
-		base = o.Resize.do(base)
+// Convert image according options opts.
+func (opts *Options) Convert(w io.Writer, base image.Image) error {
+	if opts.Resize != nil {
+		base = opts.Resize.do(base)
 	}
-	if o.Watermark != nil {
-		base = o.Watermark.do(base)
+	if opts.Watermark != nil {
+		base = opts.Watermark.do(base)
 	}
 
-	if reflect.DeepEqual(o.Format, FormatOption{}) {
-		o.Format = defaultFormat
+	if reflect.DeepEqual(opts.Format, FormatOption{}) {
+		opts.Format = defaultFormat
 	}
-	return o.Format.Encode(w, base)
+
+	return opts.Format.Encode(w, base)
 }
 
-// ConvertExt convert filename's ext according image format
-func (o *Options) ConvertExt(filename string) string {
-	return filename[0:len(filename)-len(filepath.Ext(filename))] + "." + formatExts[o.Format.Format]
+// ConvertExt convert filename's ext according image format.
+func (opts *Options) ConvertExt(filename string) string {
+	return filename[0:len(filename)-len(filepath.Ext(filename))] + "." + formatExts[opts.Format.Format]
 }

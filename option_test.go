@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"image"
 	"io"
-	"reflect"
 	"testing"
 )
 
@@ -20,53 +19,55 @@ func TestOption(t *testing.T) {
 		},
 	}
 
-	o := New()
-	if o.Format.Format != JPEG {
-		t.Error("Format is not expect one.")
+	opts := NewOptions()
+	if opts.Format.Format != JPEG {
+		t.Fatal("Format is not expect one.")
 	}
-	o.SetWatermark(mark, 100)
-	if mark != o.Watermark.Mark || o.Watermark.Opacity != 100 {
-		t.Error("SetWatermark result is not expect one.")
+	opts.SetWatermark(mark, 100)
+	if mark != opts.Watermark.Mark || opts.Watermark.Opacity != 100 {
+		t.Fatal("SetWatermark result is not expect one.")
 	}
-	o.SetWatermark(mark, 0)
-	if mark != o.Watermark.Mark || o.Watermark.Opacity != 128 {
-		t.Error("SetWatermark result is not expect one.")
+	opts.SetWatermark(mark, 0)
+	if mark != opts.Watermark.Mark || opts.Watermark.Opacity != 128 {
+		t.Fatal("SetWatermark result is not expect one.")
 	}
-	o.SetResize(0, 0, 33)
-	if o.Resize.Width != 0 || o.Resize.Height != 0 || o.Resize.Percent != 33 {
-		t.Error("SetResize result is not expect one.")
+	opts.SetResize(0, 0, 33)
+	if opts.Resize.Width != 0 || opts.Resize.Height != 0 || opts.Resize.Percent != 33 {
+		t.Fatal("SetResize result is not expect one.")
 	}
-	if err := o.Convert(io.Discard, mark); err != nil {
-		t.Error("Failed to Convert.")
+	if err := opts.Convert(io.Discard, mark); err != nil {
+		t.Fatal("Failed to Convert.")
 	}
 }
 
 func TestConvert(t *testing.T) {
 	base, err := Open("testdata/video-001.png")
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	}
+
 	var buf1, buf2 bytes.Buffer
-	o := New()
-	if err := o.Convert(&buf1, base); err != nil {
-		t.Error("Failed to Convert.")
+	opts := NewOptions()
+	if err := opts.Convert(&buf1, base); err != nil {
+		t.Fatal("Failed to Convert.")
 	}
-	o = Options{Format: FormatOption{}}
-	if err := o.Convert(&buf2, base); err != nil {
-		t.Error("Failed to Convert.")
+	opts = Options{Format: FormatOption{}}
+	if err := opts.Convert(&buf2, base); err != nil {
+		t.Fatal("Failed to Convert.")
 	}
-	if !reflect.DeepEqual(buf1, buf2) {
-		t.Error("Convert get different result")
+
+	if !bytes.Equal(buf1.Bytes(), buf2.Bytes()) {
+		t.Fatal("Convert get different result")
 	}
 }
 
 func TestConvertExt(t *testing.T) {
-	o := New()
-	if err := o.SetFormat("tif"); err != nil {
-		t.Error("Failed to SetFormat.")
+	opts := NewOptions()
+	if err := opts.SetFormat("tif"); err != nil {
+		t.Fatal("Failed to SetFormat.")
 	}
-	if o.ConvertExt("testdata/video-001.png") != "testdata/video-001.tif" {
-		t.Error("ConvertExt result is not expect one.")
+
+	if opts.ConvertExt("testdata/video-001.png") != "testdata/video-001.tif" {
+		t.Fatal("ConvertExt result is not expect one.")
 	}
 }

@@ -59,7 +59,7 @@ var defaultEncodeConfig = encodeConfig{
 	gifQuantizer:        nil,
 	gifDrawer:           nil,
 	pngCompressionLevel: png.DefaultCompression,
-	tiffCompressionType: tiff.Deflate,
+	tiffCompressionType: tiff.LZW,
 }
 
 // EncodeOption sets an optional parameter for the Encode and Save functions.
@@ -123,16 +123,19 @@ func FormatFromExtension(ext string) (Format, error) {
 			return k, nil
 		}
 	}
+
 	return -1, errors.New("unsupported image format")
 }
 
-func setFormat(f string, options ...EncodeOption) (fo FormatOption, err error) {
+func setFormat(filename string, options ...EncodeOption) (fo FormatOption, err error) {
 	var format Format
-	if format, err = FormatFromExtension(f); err != nil {
+	if format, err = FormatFromExtension(filename); err != nil {
 		return
 	}
+
 	fo.Format = format
 	fo.EncodeOption = options
+
 	return
 }
 

@@ -22,5 +22,6 @@ func (r *ResizeOption) do(base image.Image) image.Image {
 	if r.Width == 0 && r.Height == 0 {
 		return imaging.Resize(base, int(float64(base.Bounds().Dx())*r.Percent/100), 0, imaging.Lanczos)
 	}
+
 	return imaging.Resize(base, r.Width, r.Height, imaging.Lanczos)
 }

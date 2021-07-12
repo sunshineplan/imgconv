@@ -54,7 +54,7 @@ func usage() {
   --quality
 		set jpeg or pdf quality (range 1-100, default: 75)
   --compression
-		set tiff compression type (none, lzw, deflate, default: lzw)
+		set tiff compression type (none, lzw, jpeg, deflate, default: lzw)
   --watermark
 		watermark path
   --opacity
@@ -102,7 +102,7 @@ func main() {
 
 	log.SetOutput(io.MultiWriter(f, os.Stdout))
 
-	task := imgconv.New()
+	task := imgconv.NewOptions()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -113,6 +113,8 @@ func main() {
 		ct = tiff.Uncompressed
 	case "lzw":
 		ct = tiff.LZW
+	case "jpeg":
+		ct = tiff.JPEG
 	case "deflate":
 		ct = tiff.Deflate
 	default:
@@ -201,7 +203,7 @@ func main() {
 		io.WriteString(os.Stderr, fmt.Sprintf("\r%s\r", strings.Repeat(" ", lastWidth)))
 		log.Println("Total images:", total)
 
-		pb := progressbar.New(total).SetWidth(40)
+		pb := progressbar.New(total)
 		pb.Start()
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
 			defer pb.Add(1)
