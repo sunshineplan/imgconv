@@ -1,15 +1,12 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows: [ Test ]
-    branches: [ main ]
-    types: 
-      - completed
+  release:
+    types:
+      - created
 
 jobs:
   release:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -20,46 +17,10 @@ jobs:
         with:
           go-version: '1.x'
 
-      - name: Delete Old Release
-        uses: actions/github-script@v4
-        with:
-          script: |
-            let release
-            try {
-              release = await github.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag: 'v1.0'
-              })
-            } catch(e) {
-              console.error(e)
-              return
-            }
-
-            await github.repos.deleteRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: release.data.id
-            })
-
-            await github.git.deleteRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: 'tags/v1.0'
-            })
-
       - name: Build
-        id: build
-        run: |
-          GOOS=windows go build -ldflags "-s -w" -o converter.exe ./cmd 
-          echo "::set-output name=date::$(TZ=PRC date +'%Y-%m-%d')"
+        run: GOOS=windows go build -ldflags "-s -w" -o converter.exe ./cmd
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: shogo82148/actions-upload-release-asset@v1
         with:
-          tag_name: v1.0
-          name: ${{ steps.build.outputs.date }}
-          body: ${{ steps.build.outputs.date }}
-          files: converter.exe
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: converter.exe
