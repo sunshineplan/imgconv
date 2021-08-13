@@ -6,6 +6,7 @@ import (
 	"image"
 	"io"
 	"io/fs"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -22,6 +23,7 @@ import (
 
 var self string
 var src, dst string
+var force bool
 var format string
 var quality int
 var compression string
@@ -49,6 +51,8 @@ func usage() {
 		source file or directory
   --dst
 		destination directory (default: output)
+  --force
+		force overwrite (default: false)
   --format
 		output format (jpg, jpeg, png, gif, tif, tiff, bmp and pdf are supported, default: jpg)
   --quality
@@ -75,6 +79,7 @@ func main() {
 	flag.Usage = usage
 	flag.StringVar(&src, "src", "", "")
 	flag.StringVar(&dst, "dst", "output", "")
+	flag.BoolVar(&force, "force", false, "")
 	flag.StringVar(&format, "format", "jpg", "")
 	flag.IntVar(&quality, "quality", 75, "")
 	flag.StringVar(&compression, "compression", "lzw", "")
@@ -103,9 +108,6 @@ func main() {
 	log.SetOutput(io.MultiWriter(f, os.Stdout))
 
 	task := imgconv.NewOptions()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	var ct tiff.CompressionType
 	switch strings.ToLower(compression) {
@@ -137,27 +139,27 @@ func main() {
 		task.SetResize(width, height, percent)
 	}
 
-	si, err := os.Stat(src)
+	srcInfo, err := os.Stat(src)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	di, err := os.Stat(dst)
+	dstInfo, err := os.Stat(dst)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(dst, 0755); err != nil {
 				log.Fatal(err)
 			}
-			di, _ = os.Stat(dst)
+			dstInfo, _ = os.Stat(dst)
 		} else {
 			log.Fatal(err)
 		}
 	}
-	if !di.Mode().IsDir() {
+	if !dstInfo.Mode().IsDir() {
 		log.Fatal("Destination is not a directory.")
 	}
 
-	switch mode := si.Mode(); {
+	switch mode := srcInfo.Mode(); {
 	case mode.IsDir():
 		var message string
 		var lastPath string
@@ -208,36 +210,42 @@ func main() {
 		workers.New(worker).Slice(images, func(_ int, i interface{}) {
 			defer pb.Add(1)
 
-			rel, _ := filepath.Rel(src, i.(string))
+			rel, err := filepath.Rel(src, i.(string))
+			if err != nil {
+				log.Println(i, err)
+				return
+			}
 			output := task.ConvertExt(filepath.Join(dst, rel))
-			if _, err := os.Stat(output); !os.IsNotExist(err) {
+			path := filepath.Dir(output)
+
+			if _, err := os.Stat(output); !os.IsNotExist(err) && !force {
 				log.Println("Skip", output)
 				return
 			}
-			if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
+			if err := os.MkdirAll(path, 0755); err != nil {
 				log.Print(err)
 				return
 			}
 
-			base, err := imgconv.Open(i.(string))
+			img, err := imgconv.Open(i.(string))
 			if err != nil {
 				log.Println(i, err)
 				return
 			}
 
-			f, err := os.Create(output)
+			f, err := ioutil.TempFile(path, "*.tmp")
 			if err != nil {
 				log.Print(err)
 				return
 			}
 
-			if err := task.Convert(f, base); err != nil {
+			if err := task.Convert(f, img); err != nil {
 				log.Println(i, err)
-				f.Close()
-				os.Remove(output)
 				return
 			}
-			defer f.Close()
+			f.Close()
+
+			defer os.Rename(f.Name(), output)
 
 			if debug {
 				log.Printf("[Debug]Converted %s\n", i.(string))
@@ -247,11 +255,12 @@ func main() {
 
 	case mode.IsRegular():
 		output := task.ConvertExt(filepath.Join(dst, filepath.Base(src)))
+		path := filepath.Dir(output)
 
-		if _, err := os.Stat(output); !os.IsNotExist(err) {
+		if _, err := os.Stat(output); !os.IsNotExist(err) && !force {
 			log.Fatal("Destination already exist.")
 		}
-		if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
+		if err := os.MkdirAll(path, 0755); err != nil {
 			log.Fatal(err)
 		}
 
@@ -260,16 +269,17 @@ func main() {
 			log.Fatal(err)
 		}
 
-		f, err := os.Create(output)
+		f, err := ioutil.TempFile(path, "*.tmp")
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		if err := task.Convert(f, base); err != nil {
-			defer os.Remove(output)
 			log.Fatal(err)
 		}
-		defer f.Close()
+		f.Close()
+
+		defer os.Rename(f.Name(), output)
 
 		log.Print("Done.")
 
