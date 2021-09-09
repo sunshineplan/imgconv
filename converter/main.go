@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/sunshineplan/imgconv"
-	"github.com/sunshineplan/tiff"
 	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/workers"
 	"github.com/vharitonsky/iniflags"
@@ -109,16 +108,16 @@ func main() {
 
 	task := imgconv.NewOptions()
 
-	var ct tiff.CompressionType
+	var ct imgconv.TIFFCompression
 	switch strings.ToLower(compression) {
 	case "none":
-		ct = tiff.Uncompressed
+		ct = imgconv.TIFFUncompressed
 	case "lzw":
-		ct = tiff.LZW
+		ct = imgconv.TIFFLZW
 	case "jpeg":
-		ct = tiff.JPEG
+		ct = imgconv.TIFFJPEG
 	case "deflate":
-		ct = tiff.Deflate
+		ct = imgconv.TIFFDeflate
 	default:
 		log.Fatalln("Unknown tiff compression type:", ct)
 	}

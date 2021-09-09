@@ -7,8 +7,6 @@ import (
 	"image/png"
 	"io"
 	"testing"
-
-	"github.com/sunshineplan/tiff"
 )
 
 func TestSetFormat(t *testing.T) {
@@ -25,8 +23,8 @@ func TestEncode(t *testing.T) {
 		{Format: JPEG, EncodeOption: []EncodeOption{Quality(75)}},
 		{Format: PNG, EncodeOption: []EncodeOption{PNGCompressionLevel(png.DefaultCompression)}},
 		{Format: GIF, EncodeOption: []EncodeOption{GIFNumColors(256), GIFDrawer(draw.FloydSteinberg), GIFQuantizer(nil)}},
-		{Format: TIFF, EncodeOption: []EncodeOption{TIFFCompressionType(tiff.LZW)}},
-		{Format: TIFF, EncodeOption: []EncodeOption{TIFFCompressionType(tiff.JPEG)}},
+		{Format: TIFF, EncodeOption: []EncodeOption{TIFFCompressionType(TIFFLZW)}},
+		{Format: TIFF, EncodeOption: []EncodeOption{TIFFCompressionType(TIFFJPEG)}},
 		{Format: BMP},
 		{Format: PDF, EncodeOption: []EncodeOption{Quality(75)}},
 	}

@@ -38,6 +38,35 @@ var formatExts = map[Format]string{
 	PDF:  "pdf",
 }
 
+// TIFFCompression describes the type of compression used in Options.
+type TIFFCompression int
+
+// Constants for supported TIFF compression types.
+const (
+	TIFFUncompressed TIFFCompression = iota
+	TIFFDeflate
+	TIFFLZW
+	TIFFCCITTGroup3
+	TIFFCCITTGroup4
+	TIFFJPEG
+)
+
+func (c TIFFCompression) value() tiff.CompressionType {
+	switch c {
+	case TIFFLZW:
+		return tiff.LZW
+	case TIFFDeflate:
+		return tiff.Deflate
+	case TIFFCCITTGroup3:
+		return tiff.CCITTGroup3
+	case TIFFCCITTGroup4:
+		return tiff.CCITTGroup4
+	case TIFFJPEG:
+		return tiff.JPEG
+	}
+	return tiff.Uncompressed
+}
+
 // FormatOption is format option
 type FormatOption struct {
 	Format       Format
@@ -50,7 +79,7 @@ type encodeConfig struct {
 	gifQuantizer        draw.Quantizer
 	gifDrawer           draw.Drawer
 	pngCompressionLevel png.CompressionLevel
-	tiffCompressionType tiff.CompressionType
+	tiffCompressionType TIFFCompression
 }
 
 var defaultEncodeConfig = encodeConfig{
@@ -59,7 +88,7 @@ var defaultEncodeConfig = encodeConfig{
 	gifQuantizer:        nil,
 	gifDrawer:           nil,
 	pngCompressionLevel: png.DefaultCompression,
-	tiffCompressionType: tiff.LZW,
+	tiffCompressionType: TIFFLZW,
 }
 
 // EncodeOption sets an optional parameter for the Encode and Save functions.
@@ -108,7 +137,7 @@ func PNGCompressionLevel(level png.CompressionLevel) EncodeOption {
 
 // TIFFCompressionType returns an EncodeOption that sets the compression type
 // of the TIFF-encoded image. Default is tiff.Deflate.
-func TIFFCompressionType(compressionType tiff.CompressionType) EncodeOption {
+func TIFFCompressionType(compressionType TIFFCompression) EncodeOption {
 	return func(c *encodeConfig) {
 		c.tiffCompressionType = compressionType
 	}
@@ -170,7 +199,7 @@ func (f *FormatOption) Encode(w io.Writer, img image.Image) error {
 		})
 
 	case TIFF:
-		return tiff.Encode(w, img, &tiff.Options{Compression: cfg.tiffCompressionType, Predictor: true})
+		return tiff.Encode(w, img, &tiff.Options{Compression: cfg.tiffCompressionType.value(), Predictor: true})
 
 	case BMP:
 		return bmp.Encode(w, img)
