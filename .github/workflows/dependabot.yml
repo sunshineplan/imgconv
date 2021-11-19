@@ -26,6 +26,7 @@ jobs:
           go build -v ./...
           go test -v -race ./...
           cd converter
+          go mod tidy
           go build -v ./...
 
   merge:
@@ -37,7 +38,12 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v2
-      - run: gh pr merge --auto --squash "$PR_URL"
+      - uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 60
+          max_attempts: 5
+          retry_wait_seconds: 60
+          retry_on: error
+          command: gh pr merge --auto --squash ${{ github.event.pull_request.html_url }}
         env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

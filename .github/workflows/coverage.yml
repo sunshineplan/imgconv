@@ -24,7 +24,6 @@ jobs:
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          go mod download
           go test -race -covermode atomic -coverprofile=covprofile ./...
           go get github.com/mattn/goveralls
           goveralls -coverprofile=covprofile -service=github
