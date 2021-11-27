@@ -18,17 +18,16 @@ func Decode(r io.Reader) (image.Image, error) {
 
 	img, format, err := image.Decode(bytes.NewBuffer(b))
 	if format == "tiff" && err != nil {
-		img, err = tiff.Decode(bytes.NewBuffer(b))
+		return tiff.Decode(bytes.NewBuffer(b))
 	}
 
 	return img, err
 }
 
-// DecodeConfig returns the color model and dimensions of a image without
-// decoding the entire image.
-func DecodeConfig(r io.Reader) (cfg image.Config, err error) {
-	cfg, _, err = image.DecodeConfig(r)
-	return
+// DecodeConfig decodes the color model and dimensions of an image that has been encoded in a
+// registered format. The string returned is the format name used during format registration.
+func DecodeConfig(r io.Reader) (image.Config, string, error) {
+	return image.DecodeConfig(r)
 }
 
 // Open loads an image from file.

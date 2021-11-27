@@ -1,12 +1,12 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"image"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,28 +20,24 @@ import (
 	"github.com/vharitonsky/iniflags"
 )
 
-var self string
-var src, dst string
-var force bool
-var format string
-var quality int
-var compression string
-var watermark string
-var opacity uint
-var random bool
-var offsetX, offsetY int
-var width, height int
-var percent float64
-var debug bool
-var worker int
-
-func init() {
-	var err error
-	self, err = os.Executable()
-	if err != nil {
-		log.Fatalf("Failed to get self path: %v", err)
-	}
-}
+var (
+	src         = flag.String("src", "", "")
+	dst         = flag.String("dst", "output", "")
+	force       = flag.Bool("force", false, "")
+	format      = flag.String("format", "jpg", "")
+	quality     = flag.Int("quality", 75, "")
+	compression = flag.String("compression", "lzw", "")
+	watermark   = flag.String("watermark", "", "")
+	opacity     = flag.Uint("opacity", 128, "")
+	random      = flag.Bool("random", false, "")
+	offsetX     = flag.Int("x", 0, "")
+	offsetY     = flag.Int("y", 0, "")
+	width       = flag.Int("width", 0, "")
+	height      = flag.Int("height", 0, "")
+	percent     = flag.Float64("percent", 0, "")
+	worker      = flag.Int("worker", 5, "")
+	debug       = flag.Bool("debug", false, "")
+)
 
 func usage() {
 	fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
@@ -75,32 +71,32 @@ func usage() {
 }
 
 func main() {
+	var code int
+	defer func() {
+		fmt.Println("Press enter key to exit . . .")
+		fmt.Scanln()
+		os.Exit(code)
+	}()
+
+	self, err := os.Executable()
+	if err != nil {
+		log.Println("Failed to get self path", err)
+		code = 1
+		return
+	}
+
 	flag.Usage = usage
-	flag.StringVar(&src, "src", "", "")
-	flag.StringVar(&dst, "dst", "output", "")
-	flag.BoolVar(&force, "force", false, "")
-	flag.StringVar(&format, "format", "jpg", "")
-	flag.IntVar(&quality, "quality", 75, "")
-	flag.StringVar(&compression, "compression", "lzw", "")
-	flag.StringVar(&watermark, "watermark", "", "")
-	flag.UintVar(&opacity, "opacity", 128, "")
-	flag.BoolVar(&random, "random", false, "")
-	flag.IntVar(&offsetX, "x", 0, "")
-	flag.IntVar(&offsetY, "y", 0, "")
-	flag.IntVar(&width, "width", 0, "")
-	flag.IntVar(&height, "height", 0, "")
-	flag.Float64Var(&percent, "percent", 0, "")
-	flag.IntVar(&worker, "worker", 5, "")
-	flag.BoolVar(&debug, "debug", false, "")
 	iniflags.SetConfigFile(filepath.Join(filepath.Dir(self), "config.ini"))
 	iniflags.SetAllowMissingConfigFile(true)
 	iniflags.Parse()
 
 	f, err := os.OpenFile(
 		filepath.Join(filepath.Dir(self), fmt.Sprintf("convert%s.log", time.Now().Format("20060102150405"))),
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Fatalf("Failed to open log file: %v", err)
+		log.Println("Failed to open log file:", err)
+		code = 1
+		return
 	}
 	defer f.Close()
 
@@ -109,7 +105,7 @@ func main() {
 	task := imgconv.NewOptions()
 
 	var ct imgconv.TIFFCompression
-	switch strings.ToLower(compression) {
+	switch strings.ToLower(*compression) {
 	case "none":
 		ct = imgconv.TIFFUncompressed
 	case "lzw":
@@ -119,43 +115,57 @@ func main() {
 	case "deflate":
 		ct = imgconv.TIFFDeflate
 	default:
-		log.Fatalln("Unknown tiff compression type:", ct)
+		log.Println("Unknown tiff compression type:", ct)
+		code = 1
+		return
 	}
 
-	if err := task.SetFormat(format, imgconv.Quality(quality), imgconv.TIFFCompressionType(ct)); err != nil {
-		log.Fatal(err)
+	if err := task.SetFormat(*format, imgconv.Quality(*quality), imgconv.TIFFCompressionType(ct)); err != nil {
+		log.Print(err)
+		code = 1
+		return
 	}
 
-	if watermark != "" {
-		mark, err := imgconv.Open(watermark)
+	if *watermark != "" {
+		mark, err := imgconv.Open(*watermark)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
+			code = 1
+			return
 		}
-		task.SetWatermark(mark, opacity)
-		task.Watermark.SetRandom(random).SetOffset(image.Point{X: offsetX, Y: offsetY})
+		task.SetWatermark(mark, *opacity)
+		task.Watermark.SetRandom(*random).SetOffset(image.Point{X: *offsetX, Y: *offsetY})
 	}
-	if width != 0 || height != 0 || percent != 0 {
-		task.SetResize(width, height, percent)
-	}
-
-	srcInfo, err := os.Stat(src)
-	if err != nil {
-		log.Fatal(err)
+	if *width != 0 || *height != 0 || *percent != 0 {
+		task.SetResize(*width, *height, *percent)
 	}
 
-	dstInfo, err := os.Stat(dst)
+	srcInfo, err := os.Stat(*src)
 	if err != nil {
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(dst, 0755); err != nil {
-				log.Fatal(err)
+		log.Print(err)
+		code = 1
+		return
+	}
+
+	dstInfo, err := os.Stat(*dst)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			if err := os.MkdirAll(*dst, 0755); err != nil {
+				log.Print(err)
+				code = 1
+				return
 			}
-			dstInfo, _ = os.Stat(dst)
+			dstInfo, _ = os.Stat(*dst)
 		} else {
-			log.Fatal(err)
+			log.Print(err)
+			code = 1
+			return
 		}
 	}
 	if !dstInfo.Mode().IsDir() {
-		log.Fatal("Destination is not a directory.")
+		log.Print("Destination is not a directory.")
+		code = 1
+		return
 	}
 
 	switch mode := srcInfo.Mode(); {
@@ -166,7 +176,7 @@ func main() {
 		var images []string
 
 		ticker := time.NewTicker(time.Second)
-		done := make(chan bool)
+		done := make(chan struct{})
 		go func() {
 			for {
 				select {
@@ -184,7 +194,7 @@ func main() {
 			}
 		}()
 
-		filepath.WalkDir(src, func(path string, d fs.DirEntry, _ error) error {
+		filepath.WalkDir(*src, func(path string, d fs.DirEntry, _ error) error {
 			if ok, _ := regexp.MatchString(`^\.(jpe?g|png|gif|tiff?|bmp|pdf|webp)$`,
 				strings.ToLower(filepath.Ext(d.Name()))); ok {
 				images = append(images, path)
@@ -197,7 +207,7 @@ func main() {
 
 			return nil
 		})
-		done <- true
+		close(done)
 
 		total := len(images)
 
@@ -206,18 +216,18 @@ func main() {
 
 		pb := progressbar.New(total)
 		pb.Start()
-		workers.New(worker).Slice(images, func(_ int, i interface{}) {
+		workers.New(*worker).Slice(images, func(_ int, i interface{}) {
 			defer pb.Add(1)
 
-			rel, err := filepath.Rel(src, i.(string))
+			rel, err := filepath.Rel(*src, i.(string))
 			if err != nil {
 				log.Println(i, err)
 				return
 			}
-			output := task.ConvertExt(filepath.Join(dst, rel))
+			output := task.ConvertExt(filepath.Join(*dst, rel))
 			path := filepath.Dir(output)
 
-			if _, err := os.Stat(output); !os.IsNotExist(err) && !force {
+			if _, err := os.Stat(output); !errors.Is(err, fs.ErrNotExist) && !*force {
 				log.Println("Skip", output)
 				return
 			}
@@ -232,7 +242,7 @@ func main() {
 				return
 			}
 
-			f, err := ioutil.TempFile(path, "*.tmp")
+			f, err := os.CreateTemp(path, "*.tmp")
 			if err != nil {
 				log.Print(err)
 				return
@@ -244,48 +254,55 @@ func main() {
 			}
 			f.Close()
 
-			defer os.Rename(f.Name(), output)
+			os.Rename(f.Name(), output)
 
-			if debug {
+			if *debug {
 				log.Printf("[Debug]Converted %s\n", i.(string))
 			}
 		})
 		pb.Done()
 
 	case mode.IsRegular():
-		output := task.ConvertExt(filepath.Join(dst, filepath.Base(src)))
+		output := task.ConvertExt(filepath.Join(*dst, filepath.Base(*src)))
 		path := filepath.Dir(output)
 
-		if _, err := os.Stat(output); !os.IsNotExist(err) && !force {
-			log.Fatal("Destination already exist.")
+		if _, err := os.Stat(output); !errors.Is(err, fs.ErrNotExist) && !*force {
+			log.Print("Destination already exist.")
+			code = 1
+			return
 		}
 		if err := os.MkdirAll(path, 0755); err != nil {
-			log.Fatal(err)
+			log.Print(err)
+			code = 1
+			return
 		}
 
-		base, err := imgconv.Open(src)
+		base, err := imgconv.Open(*src)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
+			code = 1
+			return
 		}
 
-		f, err := ioutil.TempFile(path, "*.tmp")
+		f, err := os.CreateTemp(path, "*.tmp")
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
+			code = 1
+			return
 		}
 
 		if err := task.Convert(f, base); err != nil {
-			log.Fatal(err)
+			log.Print(err)
+			code = 1
+			return
 		}
 		f.Close()
 
-		defer os.Rename(f.Name(), output)
-
-		log.Print("Done.")
+		os.Rename(f.Name(), output)
 
 	default:
-		log.Fatal("Unknown source.")
+		log.Print("Unknown source.")
+		code = 1
 	}
-
-	fmt.Println("Press enter key to continue . . .")
-	fmt.Scanln()
+	log.Print("Done.")
 }

@@ -33,7 +33,7 @@ func TestDecodeWrite(t *testing.T) {
 			t.Fatal("Failed to write", i)
 		}
 
-		if _, err := DecodeConfig(bytes.NewBuffer(b)); err != nil {
+		if _, _, err := DecodeConfig(bytes.NewBuffer(b)); err != nil {
 			t.Fatal("Failed to decode", i, "config")
 		}
 	}
