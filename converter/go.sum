@@ -13,8 +13,8 @@ github.com/sunshineplan/pdf v1.0.1 h1:LmLFCkn2/ZSG14mgRCUlnCizRBvmMvxWHOKfNg31VI
 github.com/sunshineplan/pdf v1.0.1/go.mod h1:h+wJAkIjEwMoeD+iY2IkMQlX2STTi6C4QMLq9NVqM0M=
 github.com/sunshineplan/tiff v0.0.0-20210710125142-3366bd152a12 h1:TBuoqAbvWzOd67PIrOJu2sSWlqaQLt/8Ts3LLId7yvw=
 github.com/sunshineplan/tiff v0.0.0-20210710125142-3366bd152a12/go.mod h1:O+Ar7ouRbdfxLgoZLFz447/dvdM1NVKk1VpOQaijvAU=
-github.com/sunshineplan/utils v0.0.25 h1:uhpxdtxmZ3vo87s6zZZcsMHx7KSUoxJkhilN9e47hZ0=
-github.com/sunshineplan/utils v0.0.25/go.mod h1:95AdNDzwlNcOSwYsCEFIzDOC/osnR3EnIeE5UmbN/SE=
+github.com/sunshineplan/utils v0.0.26 h1:v6B3lgiIf+Ht6Hm6o3AFIsrDXyWzyZFNHekDM8FuE7g=
+github.com/sunshineplan/utils v0.0.26/go.mod h1:95AdNDzwlNcOSwYsCEFIzDOC/osnR3EnIeE5UmbN/SE=
 github.com/vharitonsky/iniflags v0.0.0-20180513140207-a33cd0b5f3de h1:fkw+7JkxF3U1GzQoX9h69Wvtvxajo5Rbzy6+YMMzPIg=
 github.com/vharitonsky/iniflags v0.0.0-20180513140207-a33cd0b5f3de/go.mod h1:irMhzlTz8+fVFj6CH2AN2i+WI5S6wWFtK3MBCIxIpyI=
 golang.org/x/image v0.0.0-20190823064033-3a9bac650e44/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
