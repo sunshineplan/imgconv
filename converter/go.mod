@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/sunshineplan/imgconv v1.0.2
-	github.com/sunshineplan/utils v0.0.30
+	github.com/sunshineplan/utils v0.0.31
 	github.com/vharitonsky/iniflags v0.0.0-20180513140207-a33cd0b5f3de
 )
 
