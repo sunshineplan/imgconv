@@ -35,6 +35,10 @@ func TestOption(t *testing.T) {
 	if opts.Resize.Width != 0 || opts.Resize.Height != 0 || opts.Resize.Percent != 33 {
 		t.Fatal("SetResize result is not expect one.")
 	}
+	opts.SetGray(true)
+	if !opts.Gray {
+		t.Fatal("SetGray result is not expect one.")
+	}
 	if err := opts.Convert(io.Discard, mark); err != nil {
 		t.Fatal("Failed to Convert.")
 	}

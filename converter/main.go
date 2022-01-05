@@ -25,6 +25,7 @@ var (
 	dst         = flag.String("dst", "output", "")
 	force       = flag.Bool("force", false, "")
 	format      = flag.String("format", "jpg", "")
+	gray        = flag.Bool("gray", false, "")
 	quality     = flag.Int("quality", 75, "")
 	compression = flag.String("compression", "lzw", "")
 	watermark   = flag.String("watermark", "", "")
@@ -50,6 +51,8 @@ func usage() {
 		force overwrite (default: false)
   --format
 		output format (jpg, jpeg, png, gif, tif, tiff, bmp and pdf are supported, default: jpg)
+  --gray
+		convert to grayscale (default: false)
   --quality
 		set jpeg or pdf quality (range 1-100, default: 75)
   --compression
@@ -124,6 +127,10 @@ func main() {
 		log.Print(err)
 		code = 1
 		return
+	}
+
+	if *gray {
+		task.SetGray(true)
 	}
 
 	if *watermark != "" {

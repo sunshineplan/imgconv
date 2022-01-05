@@ -5,8 +5,9 @@ github.com/hhrutter/lzw v0.0.0-20190829144645-6f07a24e8650 h1:1yY/RQWNSBjJe2GDCI
 github.com/hhrutter/lzw v0.0.0-20190829144645-6f07a24e8650/go.mod h1:yJBvOcu1wLQ9q9XZmfiPfur+3dQJuIhYQsMGLYcItZk=
 github.com/hhrutter/tiff v0.0.0-20190829141212-736cae8d0bc7 h1:o1wMw7uTNyA58IlEdDpxIrtFHTgnvYzA8sCQz8luv94=
 github.com/hhrutter/tiff v0.0.0-20190829141212-736cae8d0bc7/go.mod h1:WkUxfS2JUu3qPo6tRld7ISb8HiC0gVSU91kooBMDVok=
-github.com/pdfcpu/pdfcpu v0.3.12 h1:B+MdKisilWNSk5OCO58Z9U6H93usH73xqk6hMOaZCls=
 github.com/pdfcpu/pdfcpu v0.3.12/go.mod h1:8XVBtVxuuIuSZL4Ez15Q4QoC+H8zeAaGnuiOEwAk8jA=
+github.com/pdfcpu/pdfcpu v0.3.13 h1:VFon2Yo1PJt+sA57vPAeXWGLSZ7Ux3Jl4h02M0+s3dg=
+github.com/pdfcpu/pdfcpu v0.3.13/go.mod h1:UJc5xsXg0fpmjp1zOPdyYcAQArc/Zf3V0nv5URe+9fg=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/sunshineplan/pdf v1.0.1 h1:LmLFCkn2/ZSG14mgRCUlnCizRBvmMvxWHOKfNg31VI0=

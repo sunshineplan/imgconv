@@ -16,6 +16,7 @@ type Options struct {
 	Watermark *WatermarkOption
 	Resize    *ResizeOption
 	Format    FormatOption
+	Gray      bool
 }
 
 // NewOptions creates a new option with default setting.
@@ -47,8 +48,17 @@ func (opts *Options) SetFormat(f string, options ...EncodeOption) (err error) {
 	return
 }
 
+// SetGray sets the value for the Gray field.
+func (opts *Options) SetGray(gray bool) *Options {
+	opts.Gray = gray
+	return opts
+}
+
 // Convert image according options opts.
 func (opts *Options) Convert(w io.Writer, base image.Image) error {
+	if opts.Gray {
+		base = ToGray(base)
+	}
 	if opts.Resize != nil {
 		base = opts.Resize.do(base)
 	}
