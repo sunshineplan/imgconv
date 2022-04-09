@@ -223,12 +223,12 @@ func main() {
 
 		pb := progressbar.New(total)
 		pb.Start()
-		workers.New(*worker).Slice(images, func(_ int, i interface{}) {
+		workers.RunSlice(*worker, images, func(_ int, image string) {
 			defer pb.Add(1)
 
-			rel, err := filepath.Rel(*src, i.(string))
+			rel, err := filepath.Rel(*src, image)
 			if err != nil {
-				log.Println(i, err)
+				log.Println(image, err)
 				return
 			}
 			output := task.ConvertExt(filepath.Join(*dst, rel))
@@ -243,9 +243,9 @@ func main() {
 				return
 			}
 
-			img, err := imgconv.Open(i.(string))
+			img, err := imgconv.Open(image)
 			if err != nil {
-				log.Println(i, err)
+				log.Println(image, err)
 				return
 			}
 
@@ -256,7 +256,7 @@ func main() {
 			}
 
 			if err := task.Convert(f, img); err != nil {
-				log.Println(i, err)
+				log.Println(image, err)
 				return
 			}
 			f.Close()
@@ -264,7 +264,7 @@ func main() {
 			os.Rename(f.Name(), output)
 
 			if *debug {
-				log.Printf("[Debug]Converted %s\n", i.(string))
+				log.Printf("[Debug]Converted %s\n", image)
 			}
 		})
 		pb.Done()
