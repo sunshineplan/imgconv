@@ -6,7 +6,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/sunshineplan/pdf v1.0.2
 	github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906
-	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
+	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9
 )
 
 require (

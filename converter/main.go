@@ -15,29 +15,32 @@ import (
 	"time"
 
 	"github.com/sunshineplan/imgconv"
+
+	"github.com/disintegration/imaging"
 	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/workers"
 	"github.com/vharitonsky/iniflags"
 )
 
 var (
-	src         = flag.String("src", "", "")
-	dst         = flag.String("dst", "output", "")
-	force       = flag.Bool("force", false, "")
-	format      = flag.String("format", "jpg", "")
-	gray        = flag.Bool("gray", false, "")
-	quality     = flag.Int("quality", 75, "")
-	compression = flag.String("compression", "lzw", "")
-	watermark   = flag.String("watermark", "", "")
-	opacity     = flag.Uint("opacity", 128, "")
-	random      = flag.Bool("random", false, "")
-	offsetX     = flag.Int("x", 0, "")
-	offsetY     = flag.Int("y", 0, "")
-	width       = flag.Int("width", 0, "")
-	height      = flag.Int("height", 0, "")
-	percent     = flag.Float64("percent", 0, "")
-	worker      = flag.Int("worker", 5, "")
-	debug       = flag.Bool("debug", false, "")
+	src             = flag.String("src", "", "")
+	dst             = flag.String("dst", "output", "")
+	force           = flag.Bool("force", false, "")
+	format          = flag.String("format", "jpg", "")
+	gray            = flag.Bool("gray", false, "")
+	quality         = flag.Int("quality", 75, "")
+	compression     = flag.String("compression", "lzw", "")
+	autoOrientation = flag.Bool("auto-orientation", false, "")
+	watermark       = flag.String("watermark", "", "")
+	opacity         = flag.Uint("opacity", 128, "")
+	random          = flag.Bool("random", false, "")
+	offsetX         = flag.Int("x", 0, "")
+	offsetY         = flag.Int("y", 0, "")
+	width           = flag.Int("width", 0, "")
+	height          = flag.Int("height", 0, "")
+	percent         = flag.Float64("percent", 0, "")
+	worker          = flag.Int("worker", 5, "")
+	debug           = flag.Bool("debug", false, "")
 )
 
 func usage() {
@@ -57,6 +60,8 @@ func usage() {
 		set jpeg or pdf quality (range 1-100, default: 75)
   --compression
 		set tiff compression type (none, lzw, jpeg, deflate, default: lzw)
+  --auto-orientation
+		auto orientation (default: false)
   --watermark
 		watermark path
   --opacity
@@ -243,7 +248,7 @@ func main() {
 				return
 			}
 
-			img, err := imgconv.Open(image)
+			img, err := imaging.Open(image, imaging.AutoOrientation(*autoOrientation))
 			if err != nil {
 				log.Println(image, err)
 				return
@@ -284,7 +289,7 @@ func main() {
 			return
 		}
 
-		base, err := imgconv.Open(*src)
+		base, err := imaging.Open(*src, imaging.AutoOrientation(*autoOrientation))
 		if err != nil {
 			log.Print(err)
 			code = 1
