@@ -1,27 +1,45 @@
 package imgconv
 
 import (
-	"bytes"
 	"image"
 	"io"
 	"os"
 
-	"github.com/sunshineplan/tiff"
+	_ "github.com/sunshineplan/tiff"
+
+	"github.com/disintegration/imaging"
 )
 
+type decodeConfig struct {
+	autoOrientation bool
+}
+
+var defaultDecodeConfig = decodeConfig{
+	autoOrientation: true,
+}
+
+// DecodeOption sets an optional parameter for the Decode and Open functions.
+type DecodeOption func(*decodeConfig)
+
+// AutoOrientation returns a DecodeOption that sets the auto-orientation mode.
+// If auto-orientation is enabled, the image will be transformed after decoding
+// according to the EXIF orientation tag (if present). By default it's enabled.
+func AutoOrientation(enabled bool) DecodeOption {
+	return func(c *decodeConfig) {
+		c.autoOrientation = enabled
+	}
+}
+
 // Decode reads an image from r.
-func Decode(r io.Reader) (image.Image, error) {
-	b, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
+// If want to use custom image format packages which were registered in image package, please
+// make sure these custom packages imported before importing imgconv package.
+func Decode(r io.Reader, opts ...DecodeOption) (image.Image, error) {
+	cfg := defaultDecodeConfig
+	for _, option := range opts {
+		option(&cfg)
 	}
 
-	img, format, err := image.Decode(bytes.NewBuffer(b))
-	if format == "tiff" && err != nil {
-		return tiff.Decode(bytes.NewBuffer(b))
-	}
-
-	return img, err
+	return imaging.Decode(r, imaging.AutoOrientation(cfg.autoOrientation))
 }
 
 // DecodeConfig decodes the color model and dimensions of an image that has been encoded in a
@@ -31,14 +49,14 @@ func DecodeConfig(r io.Reader) (image.Config, string, error) {
 }
 
 // Open loads an image from file.
-func Open(file string) (image.Image, error) {
+func Open(file string, opts ...DecodeOption) (image.Image, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	return Decode(f)
+	return Decode(f, opts...)
 }
 
 // Write image according format option

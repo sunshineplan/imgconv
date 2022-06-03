@@ -15,8 +15,7 @@ import (
 	"time"
 
 	"github.com/sunshineplan/imgconv"
-
-	"github.com/disintegration/imaging"
+	_ "github.com/sunshineplan/tiff"
 	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/workers"
 	"github.com/vharitonsky/iniflags"
@@ -248,7 +247,7 @@ func main() {
 				return
 			}
 
-			img, err := imaging.Open(image, imaging.AutoOrientation(*autoOrientation))
+			img, err := imgconv.Open(image, imgconv.AutoOrientation(*autoOrientation))
 			if err != nil {
 				log.Println(image, err)
 				return
@@ -289,7 +288,7 @@ func main() {
 			return
 		}
 
-		base, err := imaging.Open(*src, imaging.AutoOrientation(*autoOrientation))
+		base, err := imgconv.Open(*src, imgconv.AutoOrientation(*autoOrientation))
 		if err != nil {
 			log.Print(err)
 			code = 1
