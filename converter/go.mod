@@ -3,7 +3,7 @@ module converter
 go 1.18
 
 require (
-	github.com/sunshineplan/imgconv v1.0.6
+	github.com/sunshineplan/imgconv v1.0.8
 	github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906
 	github.com/sunshineplan/utils v0.1.4
 	github.com/vharitonsky/iniflags v0.0.0-20180513140207-a33cd0b5f3de
@@ -16,7 +16,7 @@ require (
 	github.com/pdfcpu/pdfcpu v0.3.13 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sunshineplan/pdf v1.0.2 // indirect
-	golang.org/x/image v0.0.0-20220601225756-64ec528b34cd // indirect
+	golang.org/x/image v0.0.0-20220617043117-41969df76e82 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

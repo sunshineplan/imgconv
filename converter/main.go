@@ -127,11 +127,13 @@ func main() {
 		return
 	}
 
-	if err := task.SetFormat(*format, imgconv.Quality(*quality), imgconv.TIFFCompressionType(ct)); err != nil {
+	format, err := imgconv.FormatFromExtension(*format)
+	if err != nil {
 		log.Print(err)
 		code = 1
 		return
 	}
+	task.SetFormat(format, imgconv.Quality(*quality), imgconv.TIFFCompressionType(ct))
 
 	if *gray {
 		task.SetGray(true)
