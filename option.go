@@ -75,5 +75,5 @@ func (opts *Options) Convert(w io.Writer, base image.Image) error {
 
 // ConvertExt convert filename's ext according image format.
 func (opts *Options) ConvertExt(filename string) string {
-	return filename[0:len(filename)-len(filepath.Ext(filename))] + "." + formatExts[opts.Format.Format]
+	return filename[0:len(filename)-len(filepath.Ext(filename))] + "." + formatExts[opts.Format.Format][0]
 }

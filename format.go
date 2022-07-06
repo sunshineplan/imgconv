@@ -29,13 +29,13 @@ const (
 	PDF
 )
 
-var formatExts = map[Format]string{
-	JPEG: "jpg",
-	PNG:  "png",
-	GIF:  "gif",
-	TIFF: "tif",
-	BMP:  "bmp",
-	PDF:  "pdf",
+var formatExts = map[Format][]string{
+	JPEG: {"jpg"},
+	PNG:  {"png"},
+	GIF:  {"gif"},
+	TIFF: {"tif", "tiff"},
+	BMP:  {"bmp"},
+	PDF:  {"pdf"},
 }
 
 // TIFFCompression describes the type of compression used in Options.
@@ -148,8 +148,10 @@ func TIFFCompressionType(compressionType TIFFCompression) EncodeOption {
 func FormatFromExtension(ext string) (Format, error) {
 	ext = strings.ToLower(ext)
 	for k, v := range formatExts {
-		if ext == v {
-			return k, nil
+		for _, i := range v {
+			if ext == i {
+				return k, nil
+			}
 		}
 	}
 
