@@ -4,7 +4,6 @@ import (
 	"image"
 	"io"
 	"path/filepath"
-	"reflect"
 )
 
 const defaultOpacity = 128
@@ -66,7 +65,7 @@ func (opts *Options) Convert(w io.Writer, base image.Image) error {
 		base = opts.Watermark.do(base)
 	}
 
-	if reflect.DeepEqual(opts.Format, FormatOption{}) {
+	if opts.Format == nil {
 		opts.Format = defaultFormat
 	}
 
