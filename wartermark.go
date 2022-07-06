@@ -19,7 +19,7 @@ type WatermarkOption struct {
 }
 
 // Watermark add watermark to image
-func Watermark(base image.Image, option WatermarkOption) image.Image {
+func Watermark(base image.Image, option *WatermarkOption) image.Image {
 	return option.do(base)
 }
 
@@ -44,9 +44,9 @@ func (w *WatermarkOption) do(base image.Image) image.Image {
 		rand.Seed(time.Now().UnixNano())
 		if w.Mark.Bounds().Dx() >= base.Bounds().Dx()/3 || w.Mark.Bounds().Dy() >= base.Bounds().Dy()/3 {
 			if calcResizeXY(base.Bounds(), w.Mark.Bounds()) {
-				mark = Resize(w.Mark, ResizeOption{Width: base.Bounds().Dx() / 3})
+				mark = Resize(w.Mark, &ResizeOption{Width: base.Bounds().Dx() / 3})
 			} else {
-				mark = Resize(w.Mark, ResizeOption{Height: base.Bounds().Dy() / 3})
+				mark = Resize(w.Mark, &ResizeOption{Height: base.Bounds().Dy() / 3})
 			}
 		} else {
 			mark = w.Mark

@@ -28,7 +28,7 @@ func TestWatermark(t *testing.T) {
 	}
 
 	m0 := (&WatermarkOption{Mark: mark, Opacity: 50}).SetOffset(image.Pt(5, 5)).do(sample)
-	m1 := Watermark(sample, WatermarkOption{Mark: mark, Opacity: 50, Offset: image.Pt(5, 5)})
+	m1 := Watermark(sample, &WatermarkOption{Mark: mark, Opacity: 50, Offset: image.Pt(5, 5)})
 	if !reflect.DeepEqual(m0, m1) {
 		t.Fatal("Fixed Watermark got different images")
 	}

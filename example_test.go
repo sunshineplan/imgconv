@@ -15,13 +15,13 @@ func Example() {
 	}
 
 	// Resize the image to width = 200px preserving the aspect ratio.
-	mark := imgconv.Resize(src, imgconv.ResizeOption{Width: 200})
+	mark := imgconv.Resize(src, &imgconv.ResizeOption{Width: 200})
 
 	// Add random watermark set opacity = 128.
-	dst := imgconv.Watermark(src, imgconv.WatermarkOption{Mark: mark, Opacity: 128, Random: true})
+	dst := imgconv.Watermark(src, &imgconv.WatermarkOption{Mark: mark, Opacity: 128, Random: true})
 
 	// Write the resulting image as TIFF.
-	err = imgconv.Write(io.Discard, dst, imgconv.FormatOption{Format: imgconv.TIFF})
+	err = imgconv.Write(io.Discard, dst, &imgconv.FormatOption{Format: imgconv.TIFF})
 	if err != nil {
 		log.Fatalf("failed to write image: %v", err)
 	}

@@ -9,12 +9,15 @@ import (
 	"testing"
 )
 
-func TestSetFormat(t *testing.T) {
-	if _, err := setFormat("Jpg"); err != nil {
-		t.Fatal("Failed to set format")
+func TestFormatFromExtension(t *testing.T) {
+	if _, err := FormatFromExtension("Jpg"); err != nil {
+		t.Fatal("jpg format want no error")
 	}
-	if _, err := setFormat("txt"); err == nil {
-		t.Fatal("set txt format want error")
+	if _, err := FormatFromExtension("TIFF"); err != nil {
+		t.Fatal("tiff format want no error")
+	}
+	if _, err := FormatFromExtension("txt"); err == nil {
+		t.Fatal("txt format want error")
 	}
 }
 
@@ -38,11 +41,7 @@ func TestEncode(t *testing.T) {
 	for _, tc := range testCase {
 		// Encode the image.
 		var buf bytes.Buffer
-		fo, err := setFormat(formatExts[tc.Format], tc.EncodeOption...)
-		if err != nil {
-			t.Fatal(tc, err)
-		}
-
+		fo := &FormatOption{tc.Format, tc.EncodeOption}
 		if err := fo.Encode(&buf, m0); err != nil {
 			t.Fatal(formatExts[fo.Format], err)
 		}

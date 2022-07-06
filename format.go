@@ -1,7 +1,6 @@
 package imgconv
 
 import (
-	"errors"
 	"image"
 	"image/draw"
 	"image/gif"
@@ -30,7 +29,7 @@ const (
 )
 
 var formatExts = map[Format][]string{
-	JPEG: {"jpg"},
+	JPEG: {"jpg", "jpeg"},
 	PNG:  {"png"},
 	GIF:  {"gif"},
 	TIFF: {"tif", "tiff"},
@@ -155,19 +154,7 @@ func FormatFromExtension(ext string) (Format, error) {
 		}
 	}
 
-	return -1, errors.New("unsupported image format")
-}
-
-func setFormat(filename string, options ...EncodeOption) (fo FormatOption, err error) {
-	var format Format
-	if format, err = FormatFromExtension(filename); err != nil {
-		return
-	}
-
-	fo.Format = format
-	fo.EncodeOption = options
-
-	return
+	return -1, image.ErrFormat
 }
 
 // Encode writes the image img to w in the specified format (JPEG, PNG, GIF, TIFF, BMP or PDF).
@@ -210,5 +197,5 @@ func (f *FormatOption) Encode(w io.Writer, img image.Image) error {
 		return pdf.Encode(w, []image.Image{img}, &pdf.Options{Quality: cfg.Quality})
 	}
 
-	return errors.New("unsupported image format")
+	return image.ErrFormat
 }

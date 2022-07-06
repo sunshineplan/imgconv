@@ -60,12 +60,12 @@ func Open(file string, opts ...DecodeOption) (image.Image, error) {
 }
 
 // Write image according format option
-func Write(w io.Writer, base image.Image, option FormatOption) error {
+func Write(w io.Writer, base image.Image, option *FormatOption) error {
 	return option.Encode(w, base)
 }
 
 // Save saves image according format option
-func Save(output string, base image.Image, option FormatOption) error {
+func Save(output string, base image.Image, option *FormatOption) error {
 	f, err := os.Create(output)
 	if err != nil {
 		return err

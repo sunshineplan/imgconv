@@ -55,7 +55,7 @@ func TestConvert(t *testing.T) {
 	if err := opts.Convert(&buf1, base); err != nil {
 		t.Fatal("Failed to Convert.")
 	}
-	opts = Options{Format: FormatOption{}}
+	opts = &Options{Format: &FormatOption{}}
 	if err := opts.Convert(&buf2, base); err != nil {
 		t.Fatal("Failed to Convert.")
 	}
@@ -66,11 +66,7 @@ func TestConvert(t *testing.T) {
 }
 
 func TestConvertExt(t *testing.T) {
-	opts := NewOptions()
-	if err := opts.SetFormat("tif"); err != nil {
-		t.Fatal("Failed to SetFormat.")
-	}
-
+	opts := NewOptions().SetFormat(TIFF)
 	if opts.ConvertExt("testdata/video-001.png") != "testdata/video-001.tif" {
 		t.Fatal("ConvertExt result is not expect one.")
 	}

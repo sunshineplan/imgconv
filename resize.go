@@ -14,7 +14,7 @@ type ResizeOption struct {
 }
 
 // Resize add watermark to image
-func Resize(base image.Image, option ResizeOption) image.Image {
+func Resize(base image.Image, option *ResizeOption) image.Image {
 	return option.do(base)
 }
 

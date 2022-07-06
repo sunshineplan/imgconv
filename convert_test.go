@@ -29,7 +29,7 @@ func TestDecodeWrite(t *testing.T) {
 			t.Fatal("Failed to decode", i)
 		}
 
-		if err := Write(io.Discard, img, FormatOption{}); err != nil {
+		if err := Write(io.Discard, img, &FormatOption{}); err != nil {
 			t.Fatal("Failed to write", i)
 		}
 
@@ -48,7 +48,7 @@ func TestOpenSave(t *testing.T) {
 		t.Error("Open invalid path want error")
 	}
 
-	if _, err := Open("build.bat"); err == nil {
+	if _, err := Open("go.mod"); err == nil {
 		t.Error("Open invalid image want error")
 	}
 

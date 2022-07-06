@@ -29,13 +29,13 @@ func compare(t *testing.T, img0, img1 image.Image) {
 
 func TestResize(t *testing.T) {
 	testCase := []struct {
-		option ResizeOption
+		option *ResizeOption
 		want   image.Point
 	}{
-		{ResizeOption{Width: 300}, image.Pt(300, 206)},
-		{ResizeOption{Height: 206}, image.Pt(300, 206)},
-		{ResizeOption{Width: 200, Height: 200}, image.Pt(200, 200)},
-		{ResizeOption{Percent: 50}, image.Pt(75, 52)},
+		{&ResizeOption{Width: 300}, image.Pt(300, 206)},
+		{&ResizeOption{Height: 206}, image.Pt(300, 206)},
+		{&ResizeOption{Width: 200, Height: 200}, image.Pt(200, 200)},
+		{&ResizeOption{Percent: 50}, image.Pt(75, 52)},
 	}
 
 	// Read the image.
