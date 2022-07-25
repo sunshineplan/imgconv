@@ -80,6 +80,9 @@ func usage() {
 func main() {
 	var code int
 	defer func() {
+		if err := recover(); err != nil {
+			log.Print(err)
+		}
 		fmt.Println("Press enter key to exit . . .")
 		fmt.Scanln()
 		os.Exit(code)
@@ -230,7 +233,12 @@ func main() {
 		pb := progressbar.New(total)
 		pb.Start()
 		workers.RunSlice(*worker, images, func(_ int, image string) {
-			defer pb.Add(1)
+			defer func() {
+				if err := recover(); err != nil {
+					log.Println(image, err)
+				}
+				pb.Add(1)
+			}()
 
 			rel, err := filepath.Rel(*src, image)
 			if err != nil {
