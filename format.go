@@ -2,6 +2,7 @@ package imgconv
 
 import (
 	"image"
+	"image/color"
 	"image/draw"
 	"image/gif"
 	"image/jpeg"
@@ -9,6 +10,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/disintegration/imaging"
 	"github.com/sunshineplan/pdf"
 	"github.com/sunshineplan/tiff" // decode tiff format, not check IFD tags order
 	"golang.org/x/image/bmp"
@@ -28,13 +30,32 @@ const (
 	PDF
 )
 
-var formatExts = map[Format][]string{
-	JPEG: {"jpg", "jpeg"},
-	PNG:  {"png"},
-	GIF:  {"gif"},
-	TIFF: {"tif", "tiff"},
-	BMP:  {"bmp"},
-	PDF:  {"pdf"},
+var formatExts = [][]string{
+	{"jpg", "jpeg"},
+	{"png"},
+	{"gif"},
+	{"tif", "tiff"},
+	{"bmp"},
+	{"pdf"},
+}
+
+func (f Format) String() string {
+	return formatExts[f][0]
+}
+
+// FormatFromExtension parses image format from filename extension:
+// "jpg" (or "jpeg"), "png", "gif", "tif" (or "tiff"), "bmp" and "pdf" are supported.
+func FormatFromExtension(ext string) (Format, error) {
+	ext = strings.ToLower(ext)
+	for _, exts := range formatExts {
+		for index, i := range exts {
+			if ext == i {
+				return Format(index), nil
+			}
+		}
+	}
+
+	return -1, image.ErrFormat
 }
 
 // TIFFCompression describes the type of compression used in Options.
@@ -79,6 +100,7 @@ type encodeConfig struct {
 	gifDrawer           draw.Drawer
 	pngCompressionLevel png.CompressionLevel
 	tiffCompressionType TIFFCompression
+	background          color.Color
 }
 
 var defaultEncodeConfig = encodeConfig{
@@ -142,19 +164,11 @@ func TIFFCompressionType(compressionType TIFFCompression) EncodeOption {
 	}
 }
 
-// FormatFromExtension parses image format from filename extension:
-// "jpg" (or "jpeg"), "png", "gif", "tif" (or "tiff"), "bmp" and "pdf" are supported.
-func FormatFromExtension(ext string) (Format, error) {
-	ext = strings.ToLower(ext)
-	for k, v := range formatExts {
-		for _, i := range v {
-			if ext == i {
-				return k, nil
-			}
-		}
+// BackgroundColor returns an EncodeOption that sets the background color.
+func BackgroundColor(color color.Color) EncodeOption {
+	return func(c *encodeConfig) {
+		c.background = color
 	}
-
-	return -1, image.ErrFormat
 }
 
 // Encode writes the image img to w in the specified format (JPEG, PNG, GIF, TIFF, BMP or PDF).
@@ -162,6 +176,13 @@ func (f *FormatOption) Encode(w io.Writer, img image.Image) error {
 	cfg := defaultEncodeConfig
 	for _, option := range f.EncodeOption {
 		option(&cfg)
+	}
+
+	if cfg.background != nil {
+		i := imaging.Clone(img)
+		draw.Draw(i, i.Bounds(), &image.Uniform{cfg.background}, image.Point{}, draw.Src)
+		draw.Draw(i, i.Bounds(), img, img.Bounds().Min, draw.Over)
+		img = i
 	}
 
 	switch f.Format {

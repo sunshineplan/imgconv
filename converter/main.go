@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"image"
+	"image/color"
 	"io"
 	"io/fs"
 	"log"
@@ -26,6 +27,7 @@ var (
 	dst             = flag.String("dst", "output", "")
 	force           = flag.Bool("force", false, "")
 	format          = flag.String("format", "jpg", "")
+	whiteBackground = flag.Bool("white-background", false, "")
 	gray            = flag.Bool("gray", false, "")
 	quality         = flag.Int("quality", 75, "")
 	compression     = flag.String("compression", "lzw", "")
@@ -53,6 +55,8 @@ func usage() {
 		force overwrite (default: false)
   --format
 		output format (jpg, jpeg, png, gif, tif, tiff, bmp and pdf are supported, default: jpg)
+  --white-background
+		use white color for transparent background (default: false)
   --gray
 		convert to grayscale (default: false)
   --quality
@@ -136,7 +140,11 @@ func main() {
 		code = 1
 		return
 	}
-	task.SetFormat(format, imgconv.Quality(*quality), imgconv.TIFFCompressionType(ct))
+	if *whiteBackground {
+		task.SetFormat(format, imgconv.Quality(*quality), imgconv.TIFFCompressionType(ct), imgconv.BackgroundColor(color.White))
+	} else {
+		task.SetFormat(format, imgconv.Quality(*quality), imgconv.TIFFCompressionType(ct))
+	}
 
 	if *gray {
 		task.SetGray(true)
