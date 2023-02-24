@@ -5,7 +5,6 @@ import (
 	"image/color"
 	"image/draw"
 	"math/rand"
-	"time"
 
 	"github.com/disintegration/imaging"
 )
@@ -41,7 +40,6 @@ func (w *WatermarkOption) do(base image.Image) image.Image {
 	var offset image.Point
 	var mark image.Image
 	if w.Random {
-		rand.Seed(time.Now().UnixNano())
 		if w.Mark.Bounds().Dx() >= base.Bounds().Dx()/3 || w.Mark.Bounds().Dy() >= base.Bounds().Dy()/3 {
 			if calcResizeXY(base.Bounds(), w.Mark.Bounds()) {
 				mark = Resize(w.Mark, &ResizeOption{Width: base.Bounds().Dx() / 3})

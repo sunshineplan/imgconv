@@ -17,9 +17,9 @@ import (
 
 	"github.com/sunshineplan/imgconv"
 	_ "github.com/sunshineplan/tiff"
+	"github.com/sunshineplan/utils/flags"
 	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/workers"
-	"github.com/vharitonsky/iniflags"
 )
 
 var (
@@ -100,9 +100,8 @@ func main() {
 	}
 
 	flag.Usage = usage
-	iniflags.SetConfigFile(filepath.Join(filepath.Dir(self), "config.ini"))
-	iniflags.SetAllowMissingConfigFile(true)
-	iniflags.Parse()
+	flags.SetConfigFile(filepath.Join(filepath.Dir(self), "config.ini"))
+	flags.Parse()
 
 	f, err := os.OpenFile(
 		filepath.Join(filepath.Dir(self), fmt.Sprintf("convert%s.log", time.Now().Format("20060102150405"))),
