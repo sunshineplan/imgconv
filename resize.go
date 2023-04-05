@@ -13,7 +13,7 @@ type ResizeOption struct {
 	Percent float64
 }
 
-// Resize add watermark to image
+// Resize resizes image
 func Resize(base image.Image, option *ResizeOption) image.Image {
 	return option.do(base)
 }
