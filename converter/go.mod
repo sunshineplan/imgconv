@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/sunshineplan/imgconv v1.1.4
 	github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906
-	github.com/sunshineplan/utils v0.1.29
+	github.com/sunshineplan/utils v0.1.30
 )
 
 require (
@@ -17,8 +17,8 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/sunshineplan/pdf v1.0.3 // indirect
-	golang.org/x/image v0.6.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/image v0.7.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
