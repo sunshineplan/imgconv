@@ -17,8 +17,8 @@ github.com/sunshineplan/pdf v1.0.3 h1:Ng+/f35i0jlB87STk6sXaINqhF0JsIyXLZntWWOcGh
 github.com/sunshineplan/pdf v1.0.3/go.mod h1:4JqkeywDS6kIsqODkNKZ847P2K8eRpSSzf12FTRmUVg=
 github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906 h1:+yYRCj+PGQNnnen4+/Q7eKD2J87RJs+O39bjtHhPauk=
 github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906/go.mod h1:O+Ar7ouRbdfxLgoZLFz447/dvdM1NVKk1VpOQaijvAU=
-github.com/sunshineplan/utils v0.1.33 h1:+KkdvmXU7FDnXaPydVeuPEx8dEvu/KjkiAJzV1lSYdQ=
-github.com/sunshineplan/utils v0.1.33/go.mod h1:Wx+eubdt52Vl0l7U6gGjtP6VGrA5jqLeqWNDckGXL8I=
+github.com/sunshineplan/utils v0.1.34 h1:9rb1a9FIoCEtlnBlo+nb4P4w2DyHt0uU/hpPjYdiQdc=
+github.com/sunshineplan/utils v0.1.34/go.mod h1:Wx+eubdt52Vl0l7U6gGjtP6VGrA5jqLeqWNDckGXL8I=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
