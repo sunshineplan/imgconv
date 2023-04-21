@@ -67,7 +67,7 @@ dstImage := imgconv.Watermark(srcImage, &WatermarkOption{Mark: markImage, Opacit
 
 ```go
 // Convert srcImage to dst with jpg format.
-imgconv.Write(srcImage, dstWriter, &imgconv.FormatOption{Format: imgconv.JPEG})
+imgconv.Write(dstWriter, srcImage, &imgconv.FormatOption{Format: imgconv.JPEG})
 ```
 
 ## Example code
