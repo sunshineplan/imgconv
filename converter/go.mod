@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/sunshineplan/imgconv v1.1.4
 	github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906
-	github.com/sunshineplan/utils v0.1.40
+	github.com/sunshineplan/utils v0.1.42
 )
 
 require (
