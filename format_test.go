@@ -27,7 +27,6 @@ func TestEncode(t *testing.T) {
 		{Format: PNG, EncodeOption: []EncodeOption{PNGCompressionLevel(png.DefaultCompression)}},
 		{Format: GIF, EncodeOption: []EncodeOption{GIFNumColors(256), GIFDrawer(draw.FloydSteinberg), GIFQuantizer(nil)}},
 		{Format: TIFF, EncodeOption: []EncodeOption{TIFFCompressionType(TIFFLZW)}},
-		{Format: TIFF, EncodeOption: []EncodeOption{TIFFCompressionType(TIFFJPEG)}},
 		{Format: BMP},
 		{Format: PDF, EncodeOption: []EncodeOption{Quality(75)}},
 	}

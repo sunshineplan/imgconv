@@ -12,8 +12,8 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/sunshineplan/pdf"
-	"github.com/sunshineplan/tiff" // decode tiff format, not check IFD tags order
 	"golang.org/x/image/bmp"
+	"golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp" // decode webp format
 )
 
@@ -68,7 +68,6 @@ const (
 	TIFFLZW
 	TIFFCCITTGroup3
 	TIFFCCITTGroup4
-	TIFFJPEG
 )
 
 func (c TIFFCompression) value() tiff.CompressionType {
@@ -81,8 +80,6 @@ func (c TIFFCompression) value() tiff.CompressionType {
 		return tiff.CCITTGroup3
 	case TIFFCCITTGroup4:
 		return tiff.CCITTGroup4
-	case TIFFJPEG:
-		return tiff.JPEG
 	}
 	return tiff.Uncompressed
 }

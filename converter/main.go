@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/sunshineplan/imgconv"
-	_ "github.com/sunshineplan/tiff"
 	"github.com/sunshineplan/utils/flags"
 	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/workers"
@@ -62,7 +61,7 @@ func usage() {
   --quality
 		set jpeg or pdf quality (range 1-100, default: 75)
   --compression
-		set tiff compression type (none, lzw, jpeg, deflate, default: lzw)
+		set tiff compression type (none, lzw, deflate, default: lzw)
   --auto-orientation
 		auto orientation (default: false)
   --watermark
@@ -123,8 +122,6 @@ func main() {
 		ct = imgconv.TIFFUncompressed
 	case "lzw":
 		ct = imgconv.TIFFLZW
-	case "jpeg":
-		ct = imgconv.TIFFJPEG
 	case "deflate":
 		ct = imgconv.TIFFDeflate
 	default:

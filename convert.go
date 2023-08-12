@@ -5,8 +5,6 @@ import (
 	"io"
 	"os"
 
-	_ "github.com/sunshineplan/tiff"
-
 	"github.com/disintegration/imaging"
 )
 
