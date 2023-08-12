@@ -16,9 +16,15 @@ import (
 	"time"
 
 	"github.com/sunshineplan/imgconv"
+	"github.com/sunshineplan/tiff"
 	"github.com/sunshineplan/utils/flags"
 	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/workers"
+)
+
+var (
+	supported = regexp.MustCompile(`(?i)\.(jpe?g|png|gif|tiff?|bmp|pdf|webp)$`)
+	tiffImage = regexp.MustCompile(`(?i)\.tiff?$`)
 )
 
 var (
@@ -29,7 +35,7 @@ var (
 	whiteBackground = flag.Bool("white-background", false, "")
 	gray            = flag.Bool("gray", false, "")
 	quality         = flag.Int("quality", 75, "")
-	compression     = flag.String("compression", "lzw", "")
+	compression     = flag.String("compression", "deflate", "")
 	autoOrientation = flag.Bool("auto-orientation", false, "")
 	watermark       = flag.String("watermark", "", "")
 	opacity         = flag.Uint("opacity", 128, "")
@@ -61,7 +67,7 @@ func usage() {
   --quality
 		set jpeg or pdf quality (range 1-100, default: 75)
   --compression
-		set tiff compression type (none, lzw, deflate, default: lzw)
+		set tiff compression type (none, deflate, default: deflate)
   --auto-orientation
 		auto orientation (default: false)
   --watermark
@@ -120,8 +126,6 @@ func main() {
 	switch strings.ToLower(*compression) {
 	case "none":
 		ct = imgconv.TIFFUncompressed
-	case "lzw":
-		ct = imgconv.TIFFLZW
 	case "deflate":
 		ct = imgconv.TIFFDeflate
 	default:
@@ -215,8 +219,7 @@ func main() {
 		}()
 
 		filepath.WalkDir(*src, func(path string, d fs.DirEntry, _ error) error {
-			if ok, _ := regexp.MatchString(`^\.(jpe?g|png|gif|tiff?|bmp|pdf|webp)$`,
-				strings.ToLower(filepath.Ext(d.Name()))); ok {
+			if supported.MatchString(d.Name()) {
 				images = append(images, path)
 			}
 
@@ -261,7 +264,7 @@ func main() {
 				return
 			}
 
-			img, err := imgconv.Open(image, imgconv.AutoOrientation(*autoOrientation))
+			img, err := open(image)
 			if err != nil {
 				log.Println(image, err)
 				return
@@ -302,7 +305,7 @@ func main() {
 			return
 		}
 
-		base, err := imgconv.Open(*src, imgconv.AutoOrientation(*autoOrientation))
+		base, err := open(*src)
 		if err != nil {
 			log.Print(err)
 			code = 1
@@ -330,4 +333,19 @@ func main() {
 		code = 1
 	}
 	log.Print("Done.")
+}
+
+func open(file string) (image.Image, error) {
+	img, err := imgconv.Open(file, imgconv.AutoOrientation(*autoOrientation))
+	if err != nil {
+		if tiffImage.MatchString(file) {
+			f, err := os.Open(file)
+			if err != nil {
+				return nil, err
+			}
+			defer f.Close()
+			return tiff.Decode(f)
+		}
+	}
+	return img, nil
 }

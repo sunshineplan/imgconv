@@ -65,21 +65,12 @@ type TIFFCompression int
 const (
 	TIFFUncompressed TIFFCompression = iota
 	TIFFDeflate
-	TIFFLZW
-	TIFFCCITTGroup3
-	TIFFCCITTGroup4
 )
 
 func (c TIFFCompression) value() tiff.CompressionType {
 	switch c {
-	case TIFFLZW:
-		return tiff.LZW
 	case TIFFDeflate:
 		return tiff.Deflate
-	case TIFFCCITTGroup3:
-		return tiff.CCITTGroup3
-	case TIFFCCITTGroup4:
-		return tiff.CCITTGroup4
 	}
 	return tiff.Uncompressed
 }
@@ -106,7 +97,7 @@ var defaultEncodeConfig = encodeConfig{
 	gifQuantizer:        nil,
 	gifDrawer:           nil,
 	pngCompressionLevel: png.DefaultCompression,
-	tiffCompressionType: TIFFLZW,
+	tiffCompressionType: TIFFDeflate,
 }
 
 // EncodeOption sets an optional parameter for the Encode and Save functions.
