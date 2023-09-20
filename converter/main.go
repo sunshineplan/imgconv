@@ -8,7 +8,7 @@ import (
 	"image/color"
 	"io"
 	"io/fs"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,6 +18,7 @@ import (
 	"github.com/sunshineplan/imgconv"
 	"github.com/sunshineplan/tiff"
 	"github.com/sunshineplan/utils/flags"
+	"github.com/sunshineplan/utils/log"
 	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/workers"
 )
@@ -91,6 +92,9 @@ func main() {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Print(err)
+			if code == 0 {
+				code = 1
+			}
 		}
 		fmt.Println("Press enter key to exit . . .")
 		fmt.Scanln()
@@ -108,17 +112,10 @@ func main() {
 	flags.SetConfigFile(filepath.Join(filepath.Dir(self), "config.ini"))
 	flags.Parse()
 
-	f, err := os.OpenFile(
-		filepath.Join(filepath.Dir(self), fmt.Sprintf("convert%s.log", time.Now().Format("20060102150405"))),
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println("Failed to open log file:", err)
-		code = 1
-		return
+	log.SetOutput(filepath.Join(filepath.Dir(self), fmt.Sprintf("convert%s.log", time.Now().Format("20060102150405"))), os.Stdout)
+	if *debug {
+		log.SetLevel(slog.LevelDebug)
 	}
-	defer f.Close()
-
-	log.SetOutput(io.MultiWriter(f, os.Stdout))
 
 	task := imgconv.NewOptions()
 
@@ -284,9 +281,7 @@ func main() {
 
 			os.Rename(f.Name(), output)
 
-			if *debug {
-				log.Printf("[Debug]Converted %s\n", image)
-			}
+			log.Debug("Converted " + image + "\n")
 		})
 		pb.Done()
 
