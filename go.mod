@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/sunshineplan/pdf v1.0.5
-	golang.org/x/image v0.12.0
+	golang.org/x/image v0.13.0
 )
 
 require (
