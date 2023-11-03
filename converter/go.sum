@@ -17,8 +17,8 @@ github.com/sunshineplan/pdf v1.0.5 h1:hPdpaqMZEHY99kDO5fBfmHrojBpmxbVsNreVALcFWE
 github.com/sunshineplan/pdf v1.0.5/go.mod h1:Ljdz22+kL80CUXCIGdRUwA7PsfB7gj7ni4U71k5ZHp4=
 github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906 h1:+yYRCj+PGQNnnen4+/Q7eKD2J87RJs+O39bjtHhPauk=
 github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906/go.mod h1:O+Ar7ouRbdfxLgoZLFz447/dvdM1NVKk1VpOQaijvAU=
-github.com/sunshineplan/utils v0.1.54 h1:7F/R4CwmwnrHyVlpCBMbiB2bh2YIXYygCfCIVuHSHwk=
-github.com/sunshineplan/utils v0.1.54/go.mod h1:7zhDUGgKo2FMFzs7j6IL7B/lh3BRuE7rb7R7IgGOAfc=
+github.com/sunshineplan/utils v0.1.55 h1:Fx6UzZoOfCvuE+fqvcXuttqhHw34Ylz/wPBV3xy11AA=
+github.com/sunshineplan/utils v0.1.55/go.mod h1:7zhDUGgKo2FMFzs7j6IL7B/lh3BRuE7rb7R7IgGOAfc=
 golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
 golang.org/x/image v0.13.0 h1:3cge/F/QTkNLauhf2QoE9zp+7sr+ZcL4HnoZmdwg9sg=
 golang.org/x/image v0.13.0/go.mod h1:6mmbMOeV28HuMTgA6OSRkdXKYw/t5W9Uwn2Yv1r3Yxk=
