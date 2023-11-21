@@ -24,7 +24,8 @@ import (
 )
 
 var (
-	supported = regexp.MustCompile(`(?i)\.(jpe?g|png|gif|tiff?|bmp|pdf|webp)$`)
+	supported = regexp.MustCompile(`(?i)\.(jpe?g|png|gif|tiff?|bmp|webp)$`)
+	pdfImage  = regexp.MustCompile(`(?i)\.pdf$`)
 	tiffImage = regexp.MustCompile(`(?i)\.tiff?$`)
 )
 
@@ -32,6 +33,7 @@ var (
 	src             = flag.String("src", "", "")
 	dst             = flag.String("dst", "output", "")
 	force           = flag.Bool("force", false, "")
+	pdf             = flag.Bool("pdf", false, "")
 	format          = flag.String("format", "jpg", "")
 	whiteBackground = flag.Bool("white-background", false, "")
 	gray            = flag.Bool("gray", false, "")
@@ -59,6 +61,8 @@ func usage() {
 		destination directory (default: output)
   --force
 		force overwrite (default: false)
+  --pdf
+		convert pdf source (default: false)
   --format
 		output format (jpg, jpeg, png, gif, tif, tiff, bmp and pdf are supported, default: jpg)
   --white-background
@@ -216,7 +220,7 @@ func main() {
 		}()
 
 		filepath.WalkDir(*src, func(path string, d fs.DirEntry, _ error) error {
-			if supported.MatchString(d.Name()) {
+			if supported.MatchString(d.Name()) || (*pdf && pdfImage.MatchString(d.Name())) {
 				images = append(images, path)
 			}
 
