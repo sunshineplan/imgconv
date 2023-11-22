@@ -32,6 +32,7 @@ var (
 var (
 	src             = flag.String("src", "", "")
 	dst             = flag.String("dst", "output", "")
+	test            = flag.Bool("test", false, "")
 	force           = flag.Bool("force", false, "")
 	pdf             = flag.Bool("pdf", false, "")
 	format          = flag.String("format", "jpg", "")
@@ -59,6 +60,8 @@ func usage() {
 		source file or directory
   --dst
 		destination directory (default: output)
+  --test
+		test source file only, don't convert (default: false)
   --force
 		force overwrite (default: false)
   --pdf
@@ -95,7 +98,7 @@ func main() {
 	var code int
 	defer func() {
 		if err := recover(); err != nil {
-			log.Print(err)
+			log.Error("Panic", "error", err)
 			if code == 0 {
 				code = 1
 			}
@@ -107,7 +110,7 @@ func main() {
 
 	self, err := os.Executable()
 	if err != nil {
-		log.Println("Failed to get self path", err)
+		log.Error("Failed to get self path", "error", err)
 		code = 1
 		return
 	}
@@ -130,14 +133,14 @@ func main() {
 	case "deflate":
 		ct = imgconv.TIFFDeflate
 	default:
-		log.Println("Unknown tiff compression type:", ct)
+		log.Error("Unknown tiff compression", "type", ct)
 		code = 1
 		return
 	}
 
 	format, err := imgconv.FormatFromExtension(*format)
 	if err != nil {
-		log.Print(err)
+		log.Error("Failed to parse image format", "format", format, "error", err)
 		code = 1
 		return
 	}
@@ -154,7 +157,7 @@ func main() {
 	if *watermark != "" {
 		mark, err := imgconv.Open(*watermark)
 		if err != nil {
-			log.Print(err)
+			log.Error("Failed to open watermark", "watermark", *watermark, "error", err)
 			code = 1
 			return
 		}
@@ -167,7 +170,7 @@ func main() {
 
 	srcInfo, err := os.Stat(*src)
 	if err != nil {
-		log.Print(err)
+		log.Error("Failed to get FileInfo of source", "source", *src, "error", err)
 		code = 1
 		return
 	}
@@ -176,19 +179,19 @@ func main() {
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			if err := os.MkdirAll(*dst, 0755); err != nil {
-				log.Print(err)
+				log.Error("Failed to create directory for destination", "destination", *dst, "error", err)
 				code = 1
 				return
 			}
 			dstInfo, _ = os.Stat(*dst)
 		} else {
-			log.Print(err)
+			log.Error("Failed to get FileInfo of destination", "destination", *dst, "error", err)
 			code = 1
 			return
 		}
 	}
 	if !dstInfo.Mode().IsDir() {
-		log.Print("Destination is not a directory.")
+		log.Error("Destination is not a directory.", "destination", *dst)
 		code = 1
 		return
 	}
@@ -243,49 +246,57 @@ func main() {
 		workers.RunSlice(*worker, images, func(_ int, image string) {
 			defer func() {
 				if err := recover(); err != nil {
-					log.Println(image, err)
+					log.Error("Panic", "image", image, "error", err)
 				}
 				pb.Add(1)
 			}()
 
-			rel, err := filepath.Rel(*src, image)
-			if err != nil {
-				log.Println(image, err)
-				return
-			}
-			output := task.ConvertExt(filepath.Join(*dst, rel))
-			path := filepath.Dir(output)
+			var output, path string
+			if !*test {
+				rel, err := filepath.Rel(*src, image)
+				if err != nil {
+					log.Error("Failed to get relative path", "source", *src, "image", image, "error", err)
+					return
+				}
+				output = task.ConvertExt(filepath.Join(*dst, rel))
+				path = filepath.Dir(output)
 
-			if _, err := os.Stat(output); !errors.Is(err, fs.ErrNotExist) && !*force {
-				log.Println("Skip", output)
-				return
-			}
-			if err := os.MkdirAll(path, 0755); err != nil {
-				log.Print(err)
-				return
+				if _, err := os.Stat(output); !errors.Is(err, fs.ErrNotExist) && !*force {
+					log.Println("Skip", output)
+					return
+				}
+				if err := os.MkdirAll(path, 0755); err != nil {
+					log.Error("Failed to create directory", "path", path, "error", err)
+					return
+				}
 			}
 
 			img, err := open(image)
 			if err != nil {
-				log.Println(image, err)
+				log.Error("Failed to open image", "image", image, "error", err)
 				return
 			}
 
-			f, err := os.CreateTemp(path, "*.tmp")
-			if err != nil {
-				log.Print(err)
-				return
+			if !*test {
+				f, err := os.CreateTemp(path, "*.tmp")
+				if err != nil {
+					log.Error("Failed to create temporary file", "path", path, "error", err)
+					return
+				}
+
+				if err := task.Convert(f, img); err != nil {
+					log.Error("Failed to convert image", "image", image, "error", err)
+					return
+				}
+				f.Close()
+
+				if err := os.Rename(f.Name(), output); err != nil {
+					log.Error("Failed to rename file", "old", f.Name(), "new", output, "error", err)
+					return
+				}
+
+				log.Debug("Converted " + image)
 			}
-
-			if err := task.Convert(f, img); err != nil {
-				log.Println(image, err)
-				return
-			}
-			f.Close()
-
-			os.Rename(f.Name(), output)
-
-			log.Debug("Converted " + image + "\n")
 		})
 		pb.Done()
 
@@ -294,57 +305,60 @@ func main() {
 		path := filepath.Dir(output)
 
 		if _, err := os.Stat(output); !errors.Is(err, fs.ErrNotExist) && !*force {
-			log.Print("Destination already exist.")
+			log.Error("Destination already exist.", "destination", *dst)
 			code = 1
 			return
 		}
 		if err := os.MkdirAll(path, 0755); err != nil {
-			log.Print(err)
+			log.Error("Failed to create directory", "path", path, "error", err)
 			code = 1
 			return
 		}
 
 		base, err := open(*src)
 		if err != nil {
-			log.Print(err)
+			log.Error("Failed to open image", "source", *src, "error", err)
 			code = 1
 			return
 		}
 
 		f, err := os.CreateTemp(path, "*.tmp")
 		if err != nil {
-			log.Print(err)
+			log.Error("Failed to create temporary file", "path", path, "error", err)
 			code = 1
 			return
 		}
 
 		if err := task.Convert(f, base); err != nil {
-			log.Print(err)
+			log.Error("Failed to convert image", "source", *src, "error", err)
 			code = 1
 			return
 		}
 		f.Close()
 
-		os.Rename(f.Name(), output)
+		if err := os.Rename(f.Name(), output); err != nil {
+			log.Error("Failed to rename file", "old", f.Name(), "new", output, "error", err)
+			code = 1
+			return
+		}
 
 	default:
-		log.Print("Unknown source.")
+		log.Error("Unknown source.")
 		code = 1
+		return
 	}
 	log.Print("Done.")
 }
 
 func open(file string) (image.Image, error) {
 	img, err := imgconv.Open(file, imgconv.AutoOrientation(*autoOrientation))
-	if err != nil {
-		if tiffImage.MatchString(file) {
-			f, err := os.Open(file)
-			if err != nil {
-				return nil, err
-			}
-			defer f.Close()
-			return tiff.Decode(f)
+	if err != nil && tiffImage.MatchString(file) {
+		f, err := os.Open(file)
+		if err != nil {
+			return nil, err
 		}
+		defer f.Close()
+		return tiff.Decode(f)
 	}
-	return img, nil
+	return img, err
 }
