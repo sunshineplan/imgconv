@@ -22,12 +22,26 @@ jobs:
           go-version: stable
 
       - name: Test Code
+        id: test
         run: |
           go build -v ./...
           go test -v -race ./...
           cd converter
           go mod tidy
           go build -v ./...
+          go clean
+          cd ..
+          git config user.name "GitHub Actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff-index --quiet HEAD || echo "new_data=1" >> $GITHUB_OUTPUT
+          echo "date=$(TZ=PRC date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Commit
+        if: steps.test.outputs.new_data == 1
+        run: |
+          git commit -m ${{ steps.test.outputs.date }}
+          git push
 
   merge:
     if: ${{ github.actor == 'dependabot[bot]' }}
