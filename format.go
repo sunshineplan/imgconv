@@ -1,6 +1,8 @@
 package imgconv
 
 import (
+	"encoding"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -15,6 +17,11 @@ import (
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp" // decode webp format
+)
+
+var (
+	_ encoding.TextUnmarshaler = new(Format)
+	_ encoding.TextMarshaler   = Format(0)
 )
 
 // Format is an image file format.
@@ -39,7 +46,12 @@ var formatExts = [][]string{
 	{"pdf"},
 }
 
-func (f Format) String() string {
+func (f Format) String() (format string) {
+	defer func() {
+		if err := recover(); err != nil {
+			format = "unknown"
+		}
+	}()
 	return formatExts[f][0]
 }
 
@@ -47,8 +59,8 @@ func (f Format) String() string {
 // "jpg" (or "jpeg"), "png", "gif", "tif" (or "tiff"), "bmp" and "pdf" are supported.
 func FormatFromExtension(ext string) (Format, error) {
 	ext = strings.ToLower(ext)
-	for _, exts := range formatExts {
-		for index, i := range exts {
+	for index, exts := range formatExts {
+		for _, i := range exts {
 			if ext == i {
 				return Format(index), nil
 			}
@@ -57,6 +69,24 @@ func FormatFromExtension(ext string) (Format, error) {
 
 	return -1, image.ErrFormat
 }
+
+func (f *Format) UnmarshalText(text []byte) error {
+	format, err := FormatFromExtension(string(text))
+	if err != nil {
+		return err
+	}
+	*f = format
+	return nil
+}
+
+func (f Format) MarshalText() ([]byte, error) {
+	return []byte(f.String()), nil
+}
+
+var (
+	_ encoding.TextUnmarshaler = new(TIFFCompression)
+	_ encoding.TextMarshaler   = TIFFCompression(0)
+)
 
 // TIFFCompression describes the type of compression used in Options.
 type TIFFCompression int
@@ -67,12 +97,38 @@ const (
 	TIFFDeflate
 )
 
+var tiffCompression = []string{
+	"none",
+	"deflate",
+}
+
 func (c TIFFCompression) value() tiff.CompressionType {
 	switch c {
 	case TIFFDeflate:
 		return tiff.Deflate
 	}
 	return tiff.Uncompressed
+}
+
+func (c *TIFFCompression) UnmarshalText(text []byte) error {
+	t := strings.ToLower(string(text))
+	for index, tt := range tiffCompression {
+		if t == tt {
+			*c = TIFFCompression(index)
+			return nil
+		}
+	}
+	return fmt.Errorf("tiff: unsupported compression: %s", t)
+}
+
+func (c TIFFCompression) MarshalText() (b []byte, err error) {
+	defer func() {
+		if err := recover(); err != nil {
+			b = []byte("unknown")
+		}
+	}()
+	ct := tiffCompression[c]
+	return []byte(ct), nil
 }
 
 // FormatOption is format option
