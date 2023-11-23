@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/sunshineplan/imgconv"
@@ -26,11 +25,9 @@ var (
 	test            = flag.Bool("test", false, "")
 	force           = flag.Bool("force", false, "")
 	pdf             = flag.Bool("pdf", false, "")
-	format          = flag.String("format", "jpg", "")
 	whiteBackground = flag.Bool("white-background", false, "")
 	gray            = flag.Bool("gray", false, "")
 	quality         = flag.Int("quality", 75, "")
-	compression     = flag.String("compression", "deflate", "")
 	autoOrientation = flag.Bool("auto-orientation", false, "")
 	watermark       = flag.String("watermark", "", "")
 	opacity         = flag.Uint("opacity", 128, "")
@@ -42,6 +39,9 @@ var (
 	percent         = flag.Float64("percent", 0, "")
 	worker          = flag.Int("worker", 5, "")
 	debug           = flag.Bool("debug", false, "")
+
+	format      imgconv.Format
+	compression imgconv.TIFFCompression
 )
 
 func usage() {
@@ -106,7 +106,10 @@ func main() {
 		return
 	}
 
+	flag.CommandLine.Init(os.Args[0], flag.PanicOnError)
 	flag.Usage = usage
+	flag.TextVar(&format, "format", imgconv.JPEG, "")
+	flag.TextVar(&compression, "compression", imgconv.TIFFDeflate, "")
 	flags.SetConfigFile(filepath.Join(filepath.Dir(self), "config.ini"))
 	flags.Parse()
 
@@ -150,34 +153,17 @@ func main() {
 
 	task := imgconv.NewOptions()
 
-	outputFormat, err := imgconv.FormatFromExtension(*format)
-	if err != nil {
-		log.Error("Failed to parse image format", "format", *format, "error", err)
-		code = 1
-		return
-	}
 	var opts []imgconv.EncodeOption
-	if outputFormat == imgconv.JPEG || outputFormat == imgconv.PDF {
+	if format == imgconv.JPEG || format == imgconv.PDF {
 		opts = append(opts, imgconv.Quality(*quality))
 	}
-	if outputFormat == imgconv.TIFF {
-		var ct imgconv.TIFFCompression
-		switch strings.ToLower(*compression) {
-		case "none":
-			ct = imgconv.TIFFUncompressed
-		case "deflate":
-			ct = imgconv.TIFFDeflate
-		default:
-			log.Error("Unknown tiff compression", "type", *compression)
-			code = 1
-			return
-		}
-		opts = append(opts, imgconv.TIFFCompressionType(ct))
+	if format == imgconv.TIFF {
+		opts = append(opts, imgconv.TIFFCompressionType(compression))
 	}
 	if *whiteBackground {
 		opts = append(opts, imgconv.BackgroundColor(color.White))
 	}
-	task.SetFormat(outputFormat, opts...)
+	task.SetFormat(format, opts...)
 
 	if *gray {
 		task.SetGray(true)
