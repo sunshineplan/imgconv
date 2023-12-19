@@ -31,6 +31,11 @@ jobs:
           go build -v ./...
           go clean
           cd ..
+
+      - name: Check New Data
+        id: check
+        if: matrix.os == 'ubuntu-latest'
+        run: |
           git config user.name "GitHub Actions"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
@@ -38,9 +43,9 @@ jobs:
           echo "date=$(TZ=PRC date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
       - name: Commit
-        if: steps.test.outputs.new_data == 1
+        if: steps.check.outputs.new_data == 1
         run: |
-          git commit -m ${{ steps.test.outputs.date }}
+          git commit -m ${{ steps.check.outputs.date }}
           git push
 
   merge:
