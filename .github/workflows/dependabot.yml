@@ -46,7 +46,7 @@ jobs:
         if: steps.check.outputs.new_data == 1
         run: |
           git commit -m ${{ steps.check.outputs.date }}
-          git push origin ${{ github.event.pull_request.head.sha }}
+          git push origin ${{ github.event.pull_request.head.ref }}
 
   merge:
     if: ${{ github.actor == 'dependabot[bot]' }}
