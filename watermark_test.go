@@ -3,6 +3,7 @@ package imgconv
 import (
 	"image"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -57,6 +58,28 @@ func TestCalcResizeXY(t *testing.T) {
 	for _, tc := range testCase {
 		if calcResizeXY(tc.base, tc.mark) != tc.want {
 			t.Errorf("Want %v, got %v", tc.want, !tc.want)
+		}
+	}
+}
+
+func TestRandRange(t *testing.T) {
+	testCase := []struct {
+		min, max int
+		res      []int
+	}{
+		{1, 5, []int{1, 2, 3, 4, 5}},
+		{5, 1, []int{1, 2, 3, 4, 5}},
+		{-1, 5, []int{-1, 0, 1, 2, 3, 4, 5}},
+		{5, -1, []int{-1, 0, 1, 2, 3, 4, 5}},
+		{-5, -1, []int{-5, -4, -3, -2, -1}},
+		{-1, -5, []int{-5, -4, -3, -2, -1}},
+	}
+
+	for i := 0; i < 100; i++ {
+		for i, tc := range testCase {
+			if res := randRange(tc.min, tc.max); !slices.Contains(tc.res, res) {
+				t.Errorf("#%d: got %d, not in range %v", i, res, tc.res)
+			}
 		}
 	}
 }
