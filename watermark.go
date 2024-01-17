@@ -74,6 +74,9 @@ func (w *WatermarkOption) do(base image.Image) image.Image {
 }
 
 func randRange(min, max int) int {
+	if max < min {
+		min, max = max, min
+	}
 	return rand.Intn(max-min+1) + min
 }
 
