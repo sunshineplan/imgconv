@@ -4,7 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"math/rand"
+	"math/rand/v2"
 
 	"github.com/disintegration/imaging"
 )
@@ -77,7 +77,7 @@ func randRange(min, max int) int {
 	if max < min {
 		min, max = max, min
 	}
-	return rand.Intn(max-min+1) + min
+	return rand.N(max-min+1) + min
 }
 
 func calcResizeXY(base, mark image.Rectangle) bool {
