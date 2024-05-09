@@ -12,7 +12,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/disintegration/imaging"
 	"github.com/sunshineplan/pdf"
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/tiff"
@@ -223,8 +222,8 @@ func (f *FormatOption) Encode(w io.Writer, img image.Image) error {
 	}
 
 	if cfg.background != nil {
-		i := imaging.Clone(img)
-		draw.Draw(i, i.Bounds(), &image.Uniform{cfg.background}, image.Point{}, draw.Src)
+		i := image.NewRGBA(img.Bounds())
+		draw.Draw(i, i.Bounds(), &image.Uniform{cfg.background}, img.Bounds().Min, draw.Src)
 		draw.Draw(i, i.Bounds(), img, img.Bounds().Min, draw.Over)
 		img = i
 	}
