@@ -9,168 +9,12 @@ import (
 	"math"
 	"runtime"
 	"sync"
+	"sync/atomic"
 )
 
-// orientation is an EXIF flag that specifies the transformation
-// that should be applied to image to display it correctly.
-type orientation int
-
-const (
-	orientationUnspecified = 0
-	orientationNormal      = 1
-	orientationFlipH       = 2
-	orientationRotate180   = 3
-	orientationFlipV       = 4
-	orientationTranspose   = 5
-	orientationRotate270   = 6
-	orientationTransverse  = 7
-	orientationRotate90    = 8
-)
-
-// readOrientation tries to read the orientation EXIF flag from image data in r.
-// If the EXIF data block is not found or the orientation flag is not found
-// or any other error occures while reading the data, it returns the
-// orientationUnspecified (0) value.
-func readOrientation(r io.Reader) orientation {
-	const (
-		markerSOI      = 0xffd8
-		markerAPP1     = 0xffe1
-		exifHeader     = 0x45786966
-		byteOrderBE    = 0x4d4d
-		byteOrderLE    = 0x4949
-		orientationTag = 0x0112
-	)
-
-	// Check if JPEG SOI marker is present.
-	var soi uint16
-	if err := binary.Read(r, binary.BigEndian, &soi); err != nil {
-		return orientationUnspecified
-	}
-	if soi != markerSOI {
-		return orientationUnspecified // Missing JPEG SOI marker.
-	}
-
-	// Find JPEG APP1 marker.
-	for {
-		var marker, size uint16
-		if err := binary.Read(r, binary.BigEndian, &marker); err != nil {
-			return orientationUnspecified
-		}
-		if err := binary.Read(r, binary.BigEndian, &size); err != nil {
-			return orientationUnspecified
-		}
-		if marker>>8 != 0xff {
-			return orientationUnspecified // Invalid JPEG marker.
-		}
-		if marker == markerAPP1 {
-			break
-		}
-		if size < 2 {
-			return orientationUnspecified // Invalid block size.
-		}
-		if _, err := io.CopyN(io.Discard, r, int64(size-2)); err != nil {
-			return orientationUnspecified
-		}
-	}
-
-	// Check if EXIF header is present.
-	var header uint32
-	if err := binary.Read(r, binary.BigEndian, &header); err != nil {
-		return orientationUnspecified
-	}
-	if header != exifHeader {
-		return orientationUnspecified
-	}
-	if _, err := io.CopyN(io.Discard, r, 2); err != nil {
-		return orientationUnspecified
-	}
-
-	// Read byte order information.
-	var (
-		byteOrderTag uint16
-		byteOrder    binary.ByteOrder
-	)
-	if err := binary.Read(r, binary.BigEndian, &byteOrderTag); err != nil {
-		return orientationUnspecified
-	}
-	switch byteOrderTag {
-	case byteOrderBE:
-		byteOrder = binary.BigEndian
-	case byteOrderLE:
-		byteOrder = binary.LittleEndian
-	default:
-		return orientationUnspecified // Invalid byte order flag.
-	}
-	if _, err := io.CopyN(io.Discard, r, 2); err != nil {
-		return orientationUnspecified
-	}
-
-	// Skip the EXIF offset.
-	var offset uint32
-	if err := binary.Read(r, byteOrder, &offset); err != nil {
-		return orientationUnspecified
-	}
-	if offset < 8 {
-		return orientationUnspecified // Invalid offset value.
-	}
-	if _, err := io.CopyN(io.Discard, r, int64(offset-8)); err != nil {
-		return orientationUnspecified
-	}
-
-	// Read the number of tags.
-	var numTags uint16
-	if err := binary.Read(r, byteOrder, &numTags); err != nil {
-		return orientationUnspecified
-	}
-
-	// Find the orientation tag.
-	for i := 0; i < int(numTags); i++ {
-		var tag uint16
-		if err := binary.Read(r, byteOrder, &tag); err != nil {
-			return orientationUnspecified
-		}
-		if tag != orientationTag {
-			if _, err := io.CopyN(io.Discard, r, 10); err != nil {
-				return orientationUnspecified
-			}
-			continue
-		}
-		if _, err := io.CopyN(io.Discard, r, 6); err != nil {
-			return orientationUnspecified
-		}
-		var val uint16
-		if err := binary.Read(r, byteOrder, &val); err != nil {
-			return orientationUnspecified
-		}
-		if val < 1 || val > 8 {
-			return orientationUnspecified // Invalid tag value.
-		}
-		return orientation(val)
-	}
-	return orientationUnspecified // Missing orientation tag.
-}
-
-// fixOrientation applies a transform to img corresponding to the given orientation flag.
-func fixOrientation(img image.Image, o orientation) image.Image {
-	switch o {
-	case orientationNormal:
-	case orientationFlipH:
-		img = flipH(img)
-	case orientationFlipV:
-		img = flipV(img)
-	case orientationRotate90:
-		img = rotate90(img)
-	case orientationRotate180:
-		img = rotate180(img)
-	case orientationRotate270:
-		img = rotate270(img)
-	case orientationTranspose:
-		img = transpose(img)
-	case orientationTransverse:
-		img = transverse(img)
-	}
-	return img
-}
+//
+// io.go
+//
 
 // DecodeOption sets an optional parameter for the Decode and Open functions.
 type decodeOption func(*decodeConfig)
@@ -215,6 +59,201 @@ func decode(r io.Reader, opts ...decodeOption) (image.Image, error) {
 
 	return fixOrientation(img, orient), nil
 }
+
+//
+// resize.go
+//
+
+type indexWeight struct {
+	index  int
+	weight float64
+}
+
+func precomputeWeights(dstSize, srcSize int, filter resampleFilter) [][]indexWeight {
+	du := float64(srcSize) / float64(dstSize)
+	scale := du
+	if scale < 1.0 {
+		scale = 1.0
+	}
+	ru := math.Ceil(scale * filter.Support)
+
+	out := make([][]indexWeight, dstSize)
+	tmp := make([]indexWeight, 0, dstSize*int(ru+2)*2)
+
+	for v := 0; v < dstSize; v++ {
+		fu := (float64(v)+0.5)*du - 0.5
+
+		begin := int(math.Ceil(fu - ru))
+		if begin < 0 {
+			begin = 0
+		}
+		end := int(math.Floor(fu + ru))
+		if end > srcSize-1 {
+			end = srcSize - 1
+		}
+
+		var sum float64
+		for u := begin; u <= end; u++ {
+			w := filter.Kernel((float64(u) - fu) / scale)
+			if w != 0 {
+				sum += w
+				tmp = append(tmp, indexWeight{index: u, weight: w})
+			}
+		}
+		if sum != 0 {
+			for i := range tmp {
+				tmp[i].weight /= sum
+			}
+		}
+
+		out[v] = tmp
+		tmp = tmp[len(tmp):]
+	}
+
+	return out
+}
+
+// Resize resizes the image to the specified width and height using the specified resampling
+// filter and returns the transformed image. If one of width or height is 0, the image aspect
+// ratio is preserved.
+//
+// Example:
+//
+//	dstImage := imaging.Resize(srcImage, 800, 600, imaging.Lanczos)
+func resize(img image.Image, width, height int, filter resampleFilter) *image.NRGBA {
+	dstW, dstH := width, height
+	if dstW < 0 || dstH < 0 {
+		return &image.NRGBA{}
+	}
+	if dstW == 0 && dstH == 0 {
+		return &image.NRGBA{}
+	}
+
+	srcW := img.Bounds().Dx()
+	srcH := img.Bounds().Dy()
+	if srcW <= 0 || srcH <= 0 {
+		return &image.NRGBA{}
+	}
+
+	// If new width or height is 0 then preserve aspect ratio, minimum 1px.
+	if dstW == 0 {
+		tmpW := float64(dstH) * float64(srcW) / float64(srcH)
+		dstW = int(math.Max(1.0, math.Floor(tmpW+0.5)))
+	}
+	if dstH == 0 {
+		tmpH := float64(dstW) * float64(srcH) / float64(srcW)
+		dstH = int(math.Max(1.0, math.Floor(tmpH+0.5)))
+	}
+
+	if srcW == dstW && srcH == dstH {
+		return clone(img)
+	}
+
+	if srcW != dstW && srcH != dstH {
+		return resizeVertical(resizeHorizontal(img, dstW, filter), dstH, filter)
+	}
+	if srcW != dstW {
+		return resizeHorizontal(img, dstW, filter)
+	}
+	return resizeVertical(img, dstH, filter)
+
+}
+
+func resizeHorizontal(img image.Image, width int, filter resampleFilter) *image.NRGBA {
+	src := newScanner(img)
+	dst := image.NewNRGBA(image.Rect(0, 0, width, src.h))
+	weights := precomputeWeights(width, src.w, filter)
+	parallel(0, src.h, func(ys <-chan int) {
+		scanLine := make([]uint8, src.w*4)
+		for y := range ys {
+			src.scan(0, y, src.w, y+1, scanLine)
+			j0 := y * dst.Stride
+			for x := range weights {
+				var r, g, b, a float64
+				for _, w := range weights[x] {
+					i := w.index * 4
+					s := scanLine[i : i+4 : i+4]
+					aw := float64(s[3]) * w.weight
+					r += float64(s[0]) * aw
+					g += float64(s[1]) * aw
+					b += float64(s[2]) * aw
+					a += aw
+				}
+				if a != 0 {
+					aInv := 1 / a
+					j := j0 + x*4
+					d := dst.Pix[j : j+4 : j+4]
+					d[0] = clamp(r * aInv)
+					d[1] = clamp(g * aInv)
+					d[2] = clamp(b * aInv)
+					d[3] = clamp(a)
+				}
+			}
+		}
+	})
+	return dst
+}
+
+func resizeVertical(img image.Image, height int, filter resampleFilter) *image.NRGBA {
+	src := newScanner(img)
+	dst := image.NewNRGBA(image.Rect(0, 0, src.w, height))
+	weights := precomputeWeights(height, src.h, filter)
+	parallel(0, src.w, func(xs <-chan int) {
+		scanLine := make([]uint8, src.h*4)
+		for x := range xs {
+			src.scan(x, 0, x+1, src.h, scanLine)
+			for y := range weights {
+				var r, g, b, a float64
+				for _, w := range weights[y] {
+					i := w.index * 4
+					s := scanLine[i : i+4 : i+4]
+					aw := float64(s[3]) * w.weight
+					r += float64(s[0]) * aw
+					g += float64(s[1]) * aw
+					b += float64(s[2]) * aw
+					a += aw
+				}
+				if a != 0 {
+					aInv := 1 / a
+					j := y*dst.Stride + x*4
+					d := dst.Pix[j : j+4 : j+4]
+					d[0] = clamp(r * aInv)
+					d[1] = clamp(g * aInv)
+					d[2] = clamp(b * aInv)
+					d[3] = clamp(a)
+				}
+			}
+		}
+	})
+	return dst
+}
+
+type resampleFilter struct {
+	Support float64
+	Kernel  func(float64) float64
+}
+
+func sinc(x float64) float64 {
+	if x == 0 {
+		return 1
+	}
+	return math.Sin(math.Pi*x) / (math.Pi * x)
+}
+
+var lanczos = resampleFilter{
+	Support: 3.0,
+	Kernel: func(x float64) float64 {
+		x = math.Abs(x)
+		if x < 3.0 {
+			return sinc(x) * sinc(x/3.0)
+		}
+		return 0
+	},
+}
+
+//
+// scanner.go
+//
 
 type scanner struct {
 	image   image.Image
@@ -495,148 +534,9 @@ func (s *scanner) scan(x1, y1, x2, y2 int, dst []uint8) {
 	}
 }
 
-// Clone returns a copy of the given image.
-func clone(img image.Image) *image.NRGBA {
-	src := newScanner(img)
-	dst := image.NewNRGBA(image.Rect(0, 0, src.w, src.h))
-	size := src.w * 4
-	parallel(0, src.h, func(ys <-chan int) {
-		for y := range ys {
-			i := y * dst.Stride
-			src.scan(0, y, src.w, y+1, dst.Pix[i:i+size])
-		}
-	})
-	return dst
-}
-
-// parallel processes the data in separate goroutines.
-func parallel(start, stop int, fn func(<-chan int)) {
-	count := stop - start
-	if count < 1 {
-		return
-	}
-
-	procs := runtime.GOMAXPROCS(0)
-	if procs > count {
-		procs = count
-	}
-
-	c := make(chan int, count)
-	for i := start; i < stop; i++ {
-		c <- i
-	}
-	close(c)
-
-	var wg sync.WaitGroup
-	for i := 0; i < procs; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			fn(c)
-		}()
-	}
-	wg.Wait()
-}
-
-func reverse(pix []uint8) {
-	if len(pix) <= 4 {
-		return
-	}
-	i := 0
-	j := len(pix) - 4
-	for i < j {
-		pi := pix[i : i+4 : i+4]
-		pj := pix[j : j+4 : j+4]
-		pi[0], pj[0] = pj[0], pi[0]
-		pi[1], pj[1] = pj[1], pi[1]
-		pi[2], pj[2] = pj[2], pi[2]
-		pi[3], pj[3] = pj[3], pi[3]
-		i += 4
-		j -= 4
-	}
-}
-
-func toNRGBA(img image.Image) *image.NRGBA {
-	if img, ok := img.(*image.NRGBA); ok {
-		return &image.NRGBA{
-			Pix:    img.Pix,
-			Stride: img.Stride,
-			Rect:   img.Rect.Sub(img.Rect.Min),
-		}
-	}
-	return clone(img)
-}
-
-// clamp rounds and clamps float64 value to fit into uint8.
-func clamp(x float64) uint8 {
-	v := int64(x + 0.5)
-	if v > 255 {
-		return 255
-	}
-	if v > 0 {
-		return uint8(v)
-	}
-	return 0
-}
-
-func interpolatePoint(dst *image.NRGBA, dstX, dstY int, src *image.NRGBA, xf, yf float64, bgColor color.NRGBA) {
-	j := dstY*dst.Stride + dstX*4
-	d := dst.Pix[j : j+4 : j+4]
-
-	x0 := int(math.Floor(xf))
-	y0 := int(math.Floor(yf))
-	bounds := src.Bounds()
-	if !image.Pt(x0, y0).In(image.Rect(bounds.Min.X-1, bounds.Min.Y-1, bounds.Max.X, bounds.Max.Y)) {
-		d[0] = bgColor.R
-		d[1] = bgColor.G
-		d[2] = bgColor.B
-		d[3] = bgColor.A
-		return
-	}
-
-	xq := xf - float64(x0)
-	yq := yf - float64(y0)
-	points := [4]image.Point{
-		{x0, y0},
-		{x0 + 1, y0},
-		{x0, y0 + 1},
-		{x0 + 1, y0 + 1},
-	}
-	weights := [4]float64{
-		(1 - xq) * (1 - yq),
-		xq * (1 - yq),
-		(1 - xq) * yq,
-		xq * yq,
-	}
-
-	var r, g, b, a float64
-	for i := 0; i < 4; i++ {
-		p := points[i]
-		w := weights[i]
-		if p.In(bounds) {
-			i := p.Y*src.Stride + p.X*4
-			s := src.Pix[i : i+4 : i+4]
-			wa := float64(s[3]) * w
-			r += float64(s[0]) * wa
-			g += float64(s[1]) * wa
-			b += float64(s[2]) * wa
-			a += wa
-		} else {
-			wa := float64(bgColor.A) * w
-			r += float64(bgColor.R) * wa
-			g += float64(bgColor.G) * wa
-			b += float64(bgColor.B) * wa
-			a += wa
-		}
-	}
-	if a != 0 {
-		aInv := 1 / a
-		d[0] = clamp(r * aInv)
-		d[1] = clamp(g * aInv)
-		d[2] = clamp(b * aInv)
-		d[3] = clamp(a)
-	}
-}
+//
+// tools.go
+//
 
 // FlipH flips the image horizontally (from left to right) and returns the transformed image.
 func flipH(img image.Image) *image.NRGBA {
@@ -840,231 +740,320 @@ func rotatedSize(w, h int, angle float64) (int, int) {
 	return int(neww), int(newh)
 }
 
-type resampleFilter struct {
-	Support float64
-	Kernel  func(float64) float64
-}
+func interpolatePoint(dst *image.NRGBA, dstX, dstY int, src *image.NRGBA, xf, yf float64, bgColor color.NRGBA) {
+	j := dstY*dst.Stride + dstX*4
+	d := dst.Pix[j : j+4 : j+4]
 
-func sinc(x float64) float64 {
-	if x == 0 {
-		return 1
-	}
-	return math.Sin(math.Pi*x) / (math.Pi * x)
-}
-
-var lanczos = resampleFilter{
-	Support: 3.0,
-	Kernel: func(x float64) float64 {
-		x = math.Abs(x)
-		if x < 3.0 {
-			return sinc(x) * sinc(x/3.0)
-		}
-		return 0
-	},
-}
-
-type indexWeight struct {
-	index  int
-	weight float64
-}
-
-func precomputeWeights(dstSize, srcSize int, filter resampleFilter) [][]indexWeight {
-	du := float64(srcSize) / float64(dstSize)
-	scale := du
-	if scale < 1.0 {
-		scale = 1.0
-	}
-	ru := math.Ceil(scale * filter.Support)
-
-	out := make([][]indexWeight, dstSize)
-	tmp := make([]indexWeight, 0, dstSize*int(ru+2)*2)
-
-	for v := 0; v < dstSize; v++ {
-		fu := (float64(v)+0.5)*du - 0.5
-
-		begin := int(math.Ceil(fu - ru))
-		if begin < 0 {
-			begin = 0
-		}
-		end := int(math.Floor(fu + ru))
-		if end > srcSize-1 {
-			end = srcSize - 1
-		}
-
-		var sum float64
-		for u := begin; u <= end; u++ {
-			w := filter.Kernel((float64(u) - fu) / scale)
-			if w != 0 {
-				sum += w
-				tmp = append(tmp, indexWeight{index: u, weight: w})
-			}
-		}
-		if sum != 0 {
-			for i := range tmp {
-				tmp[i].weight /= sum
-			}
-		}
-
-		out[v] = tmp
-		tmp = tmp[len(tmp):]
+	x0 := int(math.Floor(xf))
+	y0 := int(math.Floor(yf))
+	bounds := src.Bounds()
+	if !image.Pt(x0, y0).In(image.Rect(bounds.Min.X-1, bounds.Min.Y-1, bounds.Max.X, bounds.Max.Y)) {
+		d[0] = bgColor.R
+		d[1] = bgColor.G
+		d[2] = bgColor.B
+		d[3] = bgColor.A
+		return
 	}
 
-	return out
+	xq := xf - float64(x0)
+	yq := yf - float64(y0)
+	points := [4]image.Point{
+		{x0, y0},
+		{x0 + 1, y0},
+		{x0, y0 + 1},
+		{x0 + 1, y0 + 1},
+	}
+	weights := [4]float64{
+		(1 - xq) * (1 - yq),
+		xq * (1 - yq),
+		(1 - xq) * yq,
+		xq * yq,
+	}
+
+	var r, g, b, a float64
+	for i := 0; i < 4; i++ {
+		p := points[i]
+		w := weights[i]
+		if p.In(bounds) {
+			i := p.Y*src.Stride + p.X*4
+			s := src.Pix[i : i+4 : i+4]
+			wa := float64(s[3]) * w
+			r += float64(s[0]) * wa
+			g += float64(s[1]) * wa
+			b += float64(s[2]) * wa
+			a += wa
+		} else {
+			wa := float64(bgColor.A) * w
+			r += float64(bgColor.R) * wa
+			g += float64(bgColor.G) * wa
+			b += float64(bgColor.B) * wa
+			a += wa
+		}
+	}
+	if a != 0 {
+		aInv := 1 / a
+		d[0] = clamp(r * aInv)
+		d[1] = clamp(g * aInv)
+		d[2] = clamp(b * aInv)
+		d[3] = clamp(a)
+	}
 }
 
-// Resize resizes the image to the specified width and height using the specified resampling
-// filter and returns the transformed image. If one of width or height is 0, the image aspect
-// ratio is preserved.
+// Clone returns a copy of the given image.
+func clone(img image.Image) *image.NRGBA {
+	src := newScanner(img)
+	dst := image.NewNRGBA(image.Rect(0, 0, src.w, src.h))
+	size := src.w * 4
+	parallel(0, src.h, func(ys <-chan int) {
+		for y := range ys {
+			i := y * dst.Stride
+			src.scan(0, y, src.w, y+1, dst.Pix[i:i+size])
+		}
+	})
+	return dst
+}
+
 //
-// Example:
+// transform.go
 //
-//	dstImage := imaging.Resize(srcImage, 800, 600, imaging.Lanczos)
-func resize(img image.Image, width, height int, filter resampleFilter) *image.NRGBA {
-	dstW, dstH := width, height
-	if dstW < 0 || dstH < 0 {
-		return &image.NRGBA{}
+
+// orientation is an EXIF flag that specifies the transformation
+// that should be applied to image to display it correctly.
+type orientation int
+
+const (
+	orientationUnspecified = 0
+	orientationNormal      = 1
+	orientationFlipH       = 2
+	orientationRotate180   = 3
+	orientationFlipV       = 4
+	orientationTranspose   = 5
+	orientationRotate270   = 6
+	orientationTransverse  = 7
+	orientationRotate90    = 8
+)
+
+// readOrientation tries to read the orientation EXIF flag from image data in r.
+// If the EXIF data block is not found or the orientation flag is not found
+// or any other error occures while reading the data, it returns the
+// orientationUnspecified (0) value.
+func readOrientation(r io.Reader) orientation {
+	const (
+		markerSOI      = 0xffd8
+		markerAPP1     = 0xffe1
+		exifHeader     = 0x45786966
+		byteOrderBE    = 0x4d4d
+		byteOrderLE    = 0x4949
+		orientationTag = 0x0112
+	)
+
+	// Check if JPEG SOI marker is present.
+	var soi uint16
+	if err := binary.Read(r, binary.BigEndian, &soi); err != nil {
+		return orientationUnspecified
 	}
-	if dstW == 0 && dstH == 0 {
-		return &image.NRGBA{}
+	if soi != markerSOI {
+		return orientationUnspecified // Missing JPEG SOI marker.
 	}
 
-	srcW := img.Bounds().Dx()
-	srcH := img.Bounds().Dy()
-	if srcW <= 0 || srcH <= 0 {
-		return &image.NRGBA{}
+	// Find JPEG APP1 marker.
+	for {
+		var marker, size uint16
+		if err := binary.Read(r, binary.BigEndian, &marker); err != nil {
+			return orientationUnspecified
+		}
+		if err := binary.Read(r, binary.BigEndian, &size); err != nil {
+			return orientationUnspecified
+		}
+		if marker>>8 != 0xff {
+			return orientationUnspecified // Invalid JPEG marker.
+		}
+		if marker == markerAPP1 {
+			break
+		}
+		if size < 2 {
+			return orientationUnspecified // Invalid block size.
+		}
+		if _, err := io.CopyN(io.Discard, r, int64(size-2)); err != nil {
+			return orientationUnspecified
+		}
 	}
 
-	// If new width or height is 0 then preserve aspect ratio, minimum 1px.
-	if dstW == 0 {
-		tmpW := float64(dstH) * float64(srcW) / float64(srcH)
-		dstW = int(math.Max(1.0, math.Floor(tmpW+0.5)))
+	// Check if EXIF header is present.
+	var header uint32
+	if err := binary.Read(r, binary.BigEndian, &header); err != nil {
+		return orientationUnspecified
 	}
-	if dstH == 0 {
-		tmpH := float64(dstW) * float64(srcH) / float64(srcW)
-		dstH = int(math.Max(1.0, math.Floor(tmpH+0.5)))
+	if header != exifHeader {
+		return orientationUnspecified
 	}
-
-	if filter.Support <= 0 {
-		// Nearest-neighbor special case.
-		return resizeNearest(img, dstW, dstH)
+	if _, err := io.CopyN(io.Discard, r, 2); err != nil {
+		return orientationUnspecified
 	}
 
-	if srcW != dstW && srcH != dstH {
-		return resizeVertical(resizeHorizontal(img, dstW, filter), dstH, filter)
+	// Read byte order information.
+	var (
+		byteOrderTag uint16
+		byteOrder    binary.ByteOrder
+	)
+	if err := binary.Read(r, binary.BigEndian, &byteOrderTag); err != nil {
+		return orientationUnspecified
 	}
-	if srcW != dstW {
-		return resizeHorizontal(img, dstW, filter)
+	switch byteOrderTag {
+	case byteOrderBE:
+		byteOrder = binary.BigEndian
+	case byteOrderLE:
+		byteOrder = binary.LittleEndian
+	default:
+		return orientationUnspecified // Invalid byte order flag.
 	}
-	if srcH != dstH {
-		return resizeVertical(img, dstH, filter)
+	if _, err := io.CopyN(io.Discard, r, 2); err != nil {
+		return orientationUnspecified
+	}
+
+	// Skip the EXIF offset.
+	var offset uint32
+	if err := binary.Read(r, byteOrder, &offset); err != nil {
+		return orientationUnspecified
+	}
+	if offset < 8 {
+		return orientationUnspecified // Invalid offset value.
+	}
+	if _, err := io.CopyN(io.Discard, r, int64(offset-8)); err != nil {
+		return orientationUnspecified
+	}
+
+	// Read the number of tags.
+	var numTags uint16
+	if err := binary.Read(r, byteOrder, &numTags); err != nil {
+		return orientationUnspecified
+	}
+
+	// Find the orientation tag.
+	for i := 0; i < int(numTags); i++ {
+		var tag uint16
+		if err := binary.Read(r, byteOrder, &tag); err != nil {
+			return orientationUnspecified
+		}
+		if tag != orientationTag {
+			if _, err := io.CopyN(io.Discard, r, 10); err != nil {
+				return orientationUnspecified
+			}
+			continue
+		}
+		if _, err := io.CopyN(io.Discard, r, 6); err != nil {
+			return orientationUnspecified
+		}
+		var val uint16
+		if err := binary.Read(r, byteOrder, &val); err != nil {
+			return orientationUnspecified
+		}
+		if val < 1 || val > 8 {
+			return orientationUnspecified // Invalid tag value.
+		}
+		return orientation(val)
+	}
+	return orientationUnspecified // Missing orientation tag.
+}
+
+// fixOrientation applies a transform to img corresponding to the given orientation flag.
+func fixOrientation(img image.Image, o orientation) image.Image {
+	switch o {
+	case orientationNormal:
+	case orientationFlipH:
+		img = flipH(img)
+	case orientationFlipV:
+		img = flipV(img)
+	case orientationRotate90:
+		img = rotate90(img)
+	case orientationRotate180:
+		img = rotate180(img)
+	case orientationRotate270:
+		img = rotate270(img)
+	case orientationTranspose:
+		img = transpose(img)
+	case orientationTransverse:
+		img = transverse(img)
+	}
+	return img
+}
+
+//
+// utils.go
+//
+
+var maxProcs int64
+
+// parallel processes the data in separate goroutines.
+func parallel(start, stop int, fn func(<-chan int)) {
+	count := stop - start
+	if count < 1 {
+		return
+	}
+
+	procs := runtime.GOMAXPROCS(0)
+	limit := int(atomic.LoadInt64(&maxProcs))
+	if procs > limit && limit > 0 {
+		procs = limit
+	}
+	if procs > count {
+		procs = count
+	}
+
+	c := make(chan int, count)
+	for i := start; i < stop; i++ {
+		c <- i
+	}
+	close(c)
+
+	var wg sync.WaitGroup
+	for i := 0; i < procs; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			fn(c)
+		}()
+	}
+	wg.Wait()
+}
+
+// clamp rounds and clamps float64 value to fit into uint8.
+func clamp(x float64) uint8 {
+	v := int64(x + 0.5)
+	if v > 255 {
+		return 255
+	}
+	if v > 0 {
+		return uint8(v)
+	}
+	return 0
+}
+
+func reverse(pix []uint8) {
+	if len(pix) <= 4 {
+		return
+	}
+	i := 0
+	j := len(pix) - 4
+	for i < j {
+		pi := pix[i : i+4 : i+4]
+		pj := pix[j : j+4 : j+4]
+		pi[0], pj[0] = pj[0], pi[0]
+		pi[1], pj[1] = pj[1], pi[1]
+		pi[2], pj[2] = pj[2], pi[2]
+		pi[3], pj[3] = pj[3], pi[3]
+		i += 4
+		j -= 4
+	}
+}
+
+func toNRGBA(img image.Image) *image.NRGBA {
+	if img, ok := img.(*image.NRGBA); ok {
+		return &image.NRGBA{
+			Pix:    img.Pix,
+			Stride: img.Stride,
+			Rect:   img.Rect.Sub(img.Rect.Min),
+		}
 	}
 	return clone(img)
-}
-
-func resizeHorizontal(img image.Image, width int, filter resampleFilter) *image.NRGBA {
-	src := newScanner(img)
-	dst := image.NewNRGBA(image.Rect(0, 0, width, src.h))
-	weights := precomputeWeights(width, src.w, filter)
-	parallel(0, src.h, func(ys <-chan int) {
-		scanLine := make([]uint8, src.w*4)
-		for y := range ys {
-			src.scan(0, y, src.w, y+1, scanLine)
-			j0 := y * dst.Stride
-			for x := range weights {
-				var r, g, b, a float64
-				for _, w := range weights[x] {
-					i := w.index * 4
-					s := scanLine[i : i+4 : i+4]
-					aw := float64(s[3]) * w.weight
-					r += float64(s[0]) * aw
-					g += float64(s[1]) * aw
-					b += float64(s[2]) * aw
-					a += aw
-				}
-				if a != 0 {
-					aInv := 1 / a
-					j := j0 + x*4
-					d := dst.Pix[j : j+4 : j+4]
-					d[0] = clamp(r * aInv)
-					d[1] = clamp(g * aInv)
-					d[2] = clamp(b * aInv)
-					d[3] = clamp(a)
-				}
-			}
-		}
-	})
-	return dst
-}
-
-func resizeVertical(img image.Image, height int, filter resampleFilter) *image.NRGBA {
-	src := newScanner(img)
-	dst := image.NewNRGBA(image.Rect(0, 0, src.w, height))
-	weights := precomputeWeights(height, src.h, filter)
-	parallel(0, src.w, func(xs <-chan int) {
-		scanLine := make([]uint8, src.h*4)
-		for x := range xs {
-			src.scan(x, 0, x+1, src.h, scanLine)
-			for y := range weights {
-				var r, g, b, a float64
-				for _, w := range weights[y] {
-					i := w.index * 4
-					s := scanLine[i : i+4 : i+4]
-					aw := float64(s[3]) * w.weight
-					r += float64(s[0]) * aw
-					g += float64(s[1]) * aw
-					b += float64(s[2]) * aw
-					a += aw
-				}
-				if a != 0 {
-					aInv := 1 / a
-					j := y*dst.Stride + x*4
-					d := dst.Pix[j : j+4 : j+4]
-					d[0] = clamp(r * aInv)
-					d[1] = clamp(g * aInv)
-					d[2] = clamp(b * aInv)
-					d[3] = clamp(a)
-				}
-			}
-		}
-	})
-	return dst
-}
-
-// resizeNearest is a fast nearest-neighbor resize, no filtering.
-func resizeNearest(img image.Image, width, height int) *image.NRGBA {
-	dst := image.NewNRGBA(image.Rect(0, 0, width, height))
-	dx := float64(img.Bounds().Dx()) / float64(width)
-	dy := float64(img.Bounds().Dy()) / float64(height)
-
-	if dx > 1 && dy > 1 {
-		src := newScanner(img)
-		parallel(0, height, func(ys <-chan int) {
-			for y := range ys {
-				srcY := int((float64(y) + 0.5) * dy)
-				dstOff := y * dst.Stride
-				for x := 0; x < width; x++ {
-					srcX := int((float64(x) + 0.5) * dx)
-					src.scan(srcX, srcY, srcX+1, srcY+1, dst.Pix[dstOff:dstOff+4])
-					dstOff += 4
-				}
-			}
-		})
-	} else {
-		src := toNRGBA(img)
-		parallel(0, height, func(ys <-chan int) {
-			for y := range ys {
-				srcY := int((float64(y) + 0.5) * dy)
-				srcOff0 := srcY * src.Stride
-				dstOff := y * dst.Stride
-				for x := 0; x < width; x++ {
-					srcX := int((float64(x) + 0.5) * dx)
-					srcOff := srcOff0 + srcX*4
-					copy(dst.Pix[dstOff:dstOff+4], src.Pix[srcOff:srcOff+4])
-					dstOff += 4
-				}
-			}
-		})
-	}
-
-	return dst
 }
