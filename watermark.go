@@ -5,8 +5,6 @@ import (
 	"image/color"
 	"image/draw"
 	"math/rand/v2"
-
-	"github.com/disintegration/imaging"
 )
 
 // WatermarkOption is watermark option
@@ -49,7 +47,7 @@ func (w *WatermarkOption) do(base image.Image) image.Image {
 		} else {
 			mark = w.Mark
 		}
-		mark = imaging.Rotate(mark, float64(randRange(-30, 30))+rand.Float64(), color.Transparent)
+		mark = rotate(mark, float64(randRange(-30, 30))+rand.Float64(), color.Transparent)
 		offset = image.Pt(
 			randRange(base.Bounds().Dx()/6, base.Bounds().Dx()*5/6-mark.Bounds().Dx()),
 			randRange(base.Bounds().Dy()/6, base.Bounds().Dy()*5/6-mark.Bounds().Dy()))

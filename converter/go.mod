@@ -2,8 +2,6 @@ module converter
 
 go 1.22
 
-toolchain go1.22.2
-
 require (
 	github.com/sunshineplan/imgconv v0.0.0-00010101000000-000000000000
 	github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906
@@ -11,7 +9,6 @@ require (
 )
 
 require (
-	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/hhrutter/lzw v1.0.0 // indirect
 	github.com/hhrutter/tiff v1.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
