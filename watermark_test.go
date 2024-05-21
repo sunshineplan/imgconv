@@ -6,8 +6,6 @@ import (
 	"slices"
 	"testing"
 	"time"
-
-	"github.com/disintegration/imaging"
 )
 
 func TestWatermark(t *testing.T) {
@@ -42,7 +40,7 @@ func TestWatermark(t *testing.T) {
 	}
 
 	(&WatermarkOption{Mark: sample, Random: true}).do(sample)
-	(&WatermarkOption{Mark: sample, Random: true}).do(imaging.Rotate90(sample))
+	(&WatermarkOption{Mark: sample, Random: true}).do(rotate90(sample))
 }
 
 func TestCalcResizeXY(t *testing.T) {

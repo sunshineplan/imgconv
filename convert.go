@@ -4,8 +4,6 @@ import (
 	"image"
 	"io"
 	"os"
-
-	"github.com/disintegration/imaging"
 )
 
 type decodeConfig struct {
@@ -37,7 +35,7 @@ func Decode(r io.Reader, opts ...DecodeOption) (image.Image, error) {
 		option(&cfg)
 	}
 
-	return imaging.Decode(r, imaging.AutoOrientation(cfg.autoOrientation))
+	return decode(r, autoOrientation(cfg.autoOrientation))
 }
 
 // DecodeConfig decodes the color model and dimensions of an image that has been encoded in a
