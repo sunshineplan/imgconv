@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/sunshineplan/pdf v1.0.7
-	golang.org/x/image v0.17.0
+	golang.org/x/image v0.18.0
 )
 
 require (
