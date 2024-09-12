@@ -33,7 +33,7 @@ func (w *WatermarkOption) SetOffset(offset image.Point) *WatermarkOption {
 }
 
 func (w *WatermarkOption) do(base image.Image) image.Image {
-	img := image.NewRGBA(base.Bounds())
+	img := image.NewNRGBA(base.Bounds())
 	draw.Draw(img, img.Bounds(), base, image.Point{}, draw.Src)
 	var offset image.Point
 	var mark image.Image

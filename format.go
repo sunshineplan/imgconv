@@ -222,7 +222,7 @@ func (f *FormatOption) Encode(w io.Writer, img image.Image) error {
 	}
 
 	if cfg.background != nil {
-		i := image.NewRGBA(img.Bounds())
+		i := image.NewNRGBA(img.Bounds())
 		draw.Draw(i, i.Bounds(), &image.Uniform{cfg.background}, img.Bounds().Min, draw.Src)
 		draw.Draw(i, i.Bounds(), img, img.Bounds().Min, draw.Over)
 		img = i
