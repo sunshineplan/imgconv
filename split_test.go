@@ -52,3 +52,24 @@ func TestSplit(t *testing.T) {
 		}
 	}
 }
+
+func TestSplitError(t *testing.T) {
+	r := image.Rect(0, 0, 100, 100)
+	img := image.NewNRGBA(r)
+	if _, err := Split(img, 10, SplitHorizontalMode); err != nil {
+		t.Fatal(err)
+	}
+	for i, testcase := range []struct {
+		img image.Image
+		n   int
+	}{
+		{r, 10},
+		{img, 0},
+		{img, 101},
+		{image.NewNRGBA(image.Rectangle{}), 10},
+	} {
+		if _, err := Split(testcase.img, testcase.n, SplitHorizontalMode); err == nil {
+			t.Errorf("#%d want error, got nil", i)
+		}
+	}
+}
