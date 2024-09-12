@@ -48,6 +48,16 @@ dstImage800 := imgconv.Resize(srcImage, &imgconv.ResizeOption{Width: 800})
 dstImagePercent50 := imgconv.Resize(srcImage, &imgconv.ResizeOption{Percent: 50})
 ```
 
+### Image splitting
+
+```go
+// Split srcImage into 3 parts horizontally.
+imgs, err := imgconv.Split(srcImage, 3, imgconv.SplitHorizontalMode)
+
+// Split srcImage into 3 parts vertically.
+imgs, err := imgconv.Split(srcImage, 3, imgconv.SplitVerticalMode)
+```
+
 ### Add watermark
 
 ```go
@@ -91,9 +101,14 @@ func main() {
 	dst := imgconv.Watermark(src, &imgconv.WatermarkOption{Mark: mark, Opacity: 128, Random: true})
 
 	// Write the resulting image as TIFF.
-	err = imgconv.Write(io.Discard, dst, &imgconv.FormatOption{Format: imgconv.TIFF})
-	if err != nil {
+	if err := imgconv.Write(io.Discard, dst, &imgconv.FormatOption{Format: imgconv.TIFF}); err != nil {
 		log.Fatalf("failed to write image: %v", err)
+	}
+
+	// Split the image into 3 parts horizontally.
+	imgs, err := imgconv.Split(src, 3, imgconv.SplitHorizontalMode)
+	if err != nil {
+		log.Fatalf("failed to split image: %v", err)
 	}
 }
 ```
