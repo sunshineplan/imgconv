@@ -1,6 +1,7 @@
 package imgconv_test
 
 import (
+	"fmt"
 	"io"
 	"log"
 
@@ -21,8 +22,15 @@ func Example() {
 	dst := imgconv.Watermark(src, &imgconv.WatermarkOption{Mark: mark, Opacity: 128, Random: true})
 
 	// Write the resulting image as TIFF.
-	err = imgconv.Write(io.Discard, dst, &imgconv.FormatOption{Format: imgconv.TIFF})
-	if err != nil {
+	if err := imgconv.Write(io.Discard, dst, &imgconv.FormatOption{Format: imgconv.TIFF}); err != nil {
 		log.Fatalf("failed to write image: %v", err)
 	}
+
+	// Split the image into 3 parts horizontally.
+	imgs, err := imgconv.Split(src, 3, imgconv.SplitHorizontalMode)
+	if err != nil {
+		log.Fatalf("failed to split image: %v", err)
+	}
+	fmt.Print(len(imgs))
+	// output:3
 }
