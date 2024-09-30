@@ -90,6 +90,9 @@ func main() {
 	var code int
 	defer func() {
 		if err := recover(); err != nil {
+			if err == flag.ErrHelp {
+				return
+			}
 			log.Error("Panic", "error", err)
 			if code == 0 {
 				code = 1
