@@ -38,7 +38,7 @@ var (
 	width           = flag.Int("width", 0, "")
 	height          = flag.Int("height", 0, "")
 	percent         = flag.Float64("percent", 0, "")
-	worker          = flag.Int64("worker", 5, "")
+	worker          = flag.Int("worker", 5, "")
 	debug           = flag.Bool("debug", false, "")
 
 	format      imgconv.Format
@@ -137,7 +137,7 @@ func main() {
 			log.Println("Total images:", total)
 			pb := progressbar.New(total)
 			pb.Start()
-			workers.NewWorkers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
+			workers.Workers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
 				defer pb.Add(1)
 				if _, err := open(image); err != nil {
 					log.Error("Bad image", "image", image, "error", err)
@@ -214,7 +214,7 @@ func main() {
 		log.Println("Total images:", total)
 		pb := progressbar.New(total)
 		pb.Start()
-		workers.NewWorkers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
+		workers.Workers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
 			defer pb.Add(1)
 			rel, err := filepath.Rel(*src, image)
 			if err != nil {
