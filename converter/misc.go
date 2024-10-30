@@ -48,7 +48,7 @@ func loadImages(root string, pdf bool) (imgs []string) {
 				return
 			case <-ticker.C:
 				m := message
-				fmt.Fprintf(os.Stderr, "\r%s\r%s", strings.Repeat(" ", width), m)
+				fmt.Fprintf(os.Stdout, "\r%s\r%s", strings.Repeat(" ", width), m)
 				width = len(m)
 			}
 		}
@@ -65,7 +65,7 @@ func loadImages(root string, pdf bool) (imgs []string) {
 		return nil
 	})
 	close(done)
-	fmt.Fprintf(os.Stderr, "\r%s\r", strings.Repeat(" ", width))
+	fmt.Fprintf(os.Stdout, "\r%s\r", strings.Repeat(" ", width))
 	return
 }
 
