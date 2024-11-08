@@ -6,7 +6,7 @@ require (
 	github.com/sunshineplan/imgconv v0.0.0-00010101000000-000000000000
 	github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906
 	github.com/sunshineplan/utils v0.1.73
-	github.com/sunshineplan/workers v1.0.3
+	github.com/sunshineplan/workers v1.0.4
 )
 
 require (
@@ -18,7 +18,7 @@ require (
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/sunshineplan/pdf v1.0.7 // indirect
 	golang.org/x/image v0.21.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/sync v0.9.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
