@@ -17,12 +17,12 @@ github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906 h1:+yYRCj+PGQNnn
 github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906/go.mod h1:O+Ar7ouRbdfxLgoZLFz447/dvdM1NVKk1VpOQaijvAU=
 github.com/sunshineplan/utils v0.1.73 h1:Kvi45QYzdvNqQKON5Q67M7U/35+RrOnX7K8sbZtHsgI=
 github.com/sunshineplan/utils v0.1.73/go.mod h1:61jHA9jn2CVlZzt9LbPz+MpOEiR6Jy5SNHHEcc/KQNk=
-github.com/sunshineplan/workers v1.0.3 h1:9NSB3nm9yxZFT/ZU4DaOXdWJ56Y2WXh238apdZUdA44=
-github.com/sunshineplan/workers v1.0.3/go.mod h1:wUlVWxvfwTiuULOw4atF17bgeL30gIMI6gE050reEVw=
+github.com/sunshineplan/workers v1.0.4 h1:S44VfWA7WEIfqpe3fzTvw1ir1VJ6vAI7ZqxDHxFpREQ=
+github.com/sunshineplan/workers v1.0.4/go.mod h1:BOqgiv5aLr9gruFCQOJgyk/94LOWjbuFNI7L7Pvnr70=
 golang.org/x/image v0.21.0 h1:c5qV36ajHpdj4Qi0GnE0jUc/yuo33OLFaa0d+crTD5s=
 golang.org/x/image v0.21.0/go.mod h1:vUbsLavqK/W303ZroQQVKQ+Af3Yl6Uz1Ppu5J/cLz78=
-golang.org/x/sync v0.8.0 h1:3NFvSEYkUoMifnESzZl15y791HH1qU2xm6eCJU5ZPXQ=
-golang.org/x/sync v0.8.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
+golang.org/x/sync v0.9.0 h1:fEo0HyrW1GIgZdpbhCRO0PkJajUS5H9IFUztCgEo2jQ=
+golang.org/x/sync v0.9.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
 golang.org/x/text v0.19.0 h1:kTxAhCbGbxhK0IwgSKiMO5awPoDQ0RpfiVYBfK860YM=
 golang.org/x/text v0.19.0/go.mod h1:BuEKDfySbSR4drPmRPG/7iBdf8hvFMuRexcpahXilzY=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
