@@ -39,6 +39,7 @@ var (
 	height          = flag.Int("height", 0, "")
 	percent         = flag.Float64("percent", 0, "")
 	worker          = flag.Int("worker", 5, "")
+	quiet           = flag.Bool("q", false, "")
 	debug           = flag.Bool("debug", false, "")
 
 	format      imgconv.Format
@@ -213,7 +214,9 @@ func main() {
 		total := len(images)
 		log.Println("Total images:", total)
 		pb := progressbar.New(total)
-		pb.Start()
+		if !*quiet {
+			pb.Start()
+		}
 		workers.Workers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
 			defer pb.Add(1)
 			rel, err := filepath.Rel(*src, image)
@@ -223,14 +226,16 @@ func main() {
 			}
 			output := task.ConvertExt(filepath.Join(*dst, rel))
 			if err := convert(task, image, output, *force); err != nil {
-				if err == errSkip {
+				if err == errSkip && !*quiet {
 					log.Println("Skip", output)
 				}
 				return
 			}
 			log.Debug("Converted " + image)
 		}))
-		pb.Done()
+		if !*quiet {
+			pb.Done()
+		}
 	case srcInfo.Mode().IsRegular():
 		output := *dst
 		if dstInfo.Mode().IsDir() {
