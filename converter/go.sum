@@ -15,8 +15,8 @@ github.com/sunshineplan/pdf v1.0.7 h1:62xlc079jh4tGLDjiihyyhwVFkn0IsxLyDpHplbG9E
 github.com/sunshineplan/pdf v1.0.7/go.mod h1:QsEmZCWBE3uFK8PCrM0pua1WDWLNU77YusiDEcY56OQ=
 github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906 h1:+yYRCj+PGQNnnen4+/Q7eKD2J87RJs+O39bjtHhPauk=
 github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906/go.mod h1:O+Ar7ouRbdfxLgoZLFz447/dvdM1NVKk1VpOQaijvAU=
-github.com/sunshineplan/utils v0.1.73 h1:Kvi45QYzdvNqQKON5Q67M7U/35+RrOnX7K8sbZtHsgI=
-github.com/sunshineplan/utils v0.1.73/go.mod h1:61jHA9jn2CVlZzt9LbPz+MpOEiR6Jy5SNHHEcc/KQNk=
+github.com/sunshineplan/utils v0.1.74 h1:Zr5Si2lllOfDbxcSz4GpaSsF24CzlBFNrF/WGMc8lH8=
+github.com/sunshineplan/utils v0.1.74/go.mod h1:61jHA9jn2CVlZzt9LbPz+MpOEiR6Jy5SNHHEcc/KQNk=
 github.com/sunshineplan/workers v1.0.4 h1:S44VfWA7WEIfqpe3fzTvw1ir1VJ6vAI7ZqxDHxFpREQ=
 github.com/sunshineplan/workers v1.0.4/go.mod h1:BOqgiv5aLr9gruFCQOJgyk/94LOWjbuFNI7L7Pvnr70=
 golang.org/x/image v0.23.0 h1:HseQ7c2OpPKTPVzNjG5fwJsOTCiiwS4QdsYi5XU6H68=
