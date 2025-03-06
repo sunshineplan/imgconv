@@ -1,7 +1,6 @@
 module github.com/sunshineplan/imgconv
 
-go 1.22
-toolchain go1.23.7
+go 1.23
 
 require (
 	github.com/sunshineplan/pdf v1.0.7
