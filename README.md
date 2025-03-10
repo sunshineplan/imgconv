@@ -13,7 +13,7 @@
 Package imgconv provides basic image processing functions (resize, add watermark, format converter.).
 
 All the image processing functions provided by the package accept any image type that implements `image.Image` interface
-as an input, include jpg(jpeg), png, gif, tif(tiff), bmp, webp(decode only) and pdf.
+as an input, include jpg(jpeg), png, gif, tif(tiff), bmp, webp and pdf.
 
 ## Installation
 
@@ -30,6 +30,7 @@ This repo relies on the following third-party projects:
   * [disintegration/imaging](https://github.com/disintegration/imaging)
   * [pdfcpu/pdfcpu](https://github.com/pdfcpu/pdfcpu)
   * [hhrutter/tiff](https://github.com/hhrutter/tiff)
+  * [HugoSmits86/nativewebp](github.com/HugoSmits86/nativewebp)
 
 ## Usage examples
 

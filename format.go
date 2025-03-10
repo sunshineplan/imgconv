@@ -10,12 +10,13 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"slices"
 	"strings"
 
+	"github.com/HugoSmits86/nativewebp"
 	"github.com/sunshineplan/pdf"
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/tiff"
-	_ "golang.org/x/image/webp" // decode webp format
 )
 
 var (
@@ -34,6 +35,7 @@ const (
 	TIFF
 	BMP
 	PDF
+	WEBP
 )
 
 var formatExts = [][]string{
@@ -43,6 +45,7 @@ var formatExts = [][]string{
 	{"tif", "tiff"},
 	{"bmp"},
 	{"pdf"},
+	{"webp"},
 }
 
 func (f Format) String() (format string) {
@@ -55,14 +58,12 @@ func (f Format) String() (format string) {
 }
 
 // FormatFromExtension parses image format from filename extension:
-// "jpg" (or "jpeg"), "png", "gif", "tif" (or "tiff"), "bmp" and "pdf" are supported.
+// "jpg" (or "jpeg"), "png", "gif", "tif" (or "tiff"), "bmp", "pdf" and "webp" are supported.
 func FormatFromExtension(ext string) (Format, error) {
 	ext = strings.ToLower(ext)
 	for index, exts := range formatExts {
-		for _, i := range exts {
-			if ext == i {
-				return Format(index), nil
-			}
+		if slices.Contains(exts, ext) {
+			return Format(index), nil
 		}
 	}
 
@@ -137,13 +138,14 @@ type FormatOption struct {
 }
 
 type encodeConfig struct {
-	Quality             int
-	gifNumColors        int
-	gifQuantizer        draw.Quantizer
-	gifDrawer           draw.Drawer
-	pngCompressionLevel png.CompressionLevel
-	tiffCompressionType TIFFCompression
-	background          color.Color
+	Quality               int
+	gifNumColors          int
+	gifQuantizer          draw.Quantizer
+	gifDrawer             draw.Drawer
+	pngCompressionLevel   png.CompressionLevel
+	tiffCompressionType   TIFFCompression
+	webpUseExtendedFormat bool
+	background            color.Color
 }
 
 var defaultEncodeConfig = encodeConfig{
@@ -207,6 +209,14 @@ func TIFFCompressionType(compressionType TIFFCompression) EncodeOption {
 	}
 }
 
+// WEBPUseExtendedFormat returns EncodeOption that determines whether to use extended format
+// of the WEBP-encoded image. Default is false.
+func WEBPUseExtendedFormat(b bool) EncodeOption {
+	return func(c *encodeConfig) {
+		c.webpUseExtendedFormat = b
+	}
+}
+
 // BackgroundColor returns an EncodeOption that sets the background color.
 func BackgroundColor(color color.Color) EncodeOption {
 	return func(c *encodeConfig) {
@@ -214,7 +224,7 @@ func BackgroundColor(color color.Color) EncodeOption {
 	}
 }
 
-// Encode writes the image img to w in the specified format (JPEG, PNG, GIF, TIFF, BMP or PDF).
+// Encode writes the image img to w in the specified format (JPEG, PNG, GIF, TIFF, BMP, PDF or WEBP).
 func (f *FormatOption) Encode(w io.Writer, img image.Image) error {
 	cfg := defaultEncodeConfig
 	for _, option := range f.EncodeOption {
@@ -259,6 +269,9 @@ func (f *FormatOption) Encode(w io.Writer, img image.Image) error {
 
 	case PDF:
 		return pdf.Encode(w, []image.Image{img}, &pdf.Options{Quality: cfg.Quality})
+
+	case WEBP:
+		return nativewebp.Encode(w, img, &nativewebp.Options{UseExtendedFormat: cfg.webpUseExtendedFormat})
 	}
 
 	return image.ErrFormat

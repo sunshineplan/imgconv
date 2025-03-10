@@ -21,26 +21,27 @@ import (
 )
 
 var (
-	src             = flag.String("src", "", "")
-	dst             = flag.String("dst", "output", "")
-	test            = flag.Bool("test", false, "")
-	force           = flag.Bool("force", false, "")
-	pdf             = flag.Bool("pdf", false, "")
-	whiteBackground = flag.Bool("white-background", false, "")
-	gray            = flag.Bool("gray", false, "")
-	quality         = flag.Int("quality", 75, "")
-	autoOrientation = flag.Bool("auto-orientation", false, "")
-	watermark       = flag.String("watermark", "", "")
-	opacity         = flag.Uint("opacity", 128, "")
-	random          = flag.Bool("random", false, "")
-	offsetX         = flag.Int("x", 0, "")
-	offsetY         = flag.Int("y", 0, "")
-	width           = flag.Int("width", 0, "")
-	height          = flag.Int("height", 0, "")
-	percent         = flag.Float64("percent", 0, "")
-	worker          = flag.Int("worker", 5, "")
-	quiet           = flag.Bool("q", false, "")
-	debug           = flag.Bool("debug", false, "")
+	src               = flag.String("src", "", "")
+	dst               = flag.String("dst", "output", "")
+	test              = flag.Bool("test", false, "")
+	force             = flag.Bool("force", false, "")
+	pdf               = flag.Bool("pdf", false, "")
+	whiteBackground   = flag.Bool("white-background", false, "")
+	gray              = flag.Bool("gray", false, "")
+	quality           = flag.Int("quality", 75, "")
+	autoOrientation   = flag.Bool("auto-orientation", false, "")
+	useExtendedFormat = flag.Bool("use-extended-format", false, "")
+	watermark         = flag.String("watermark", "", "")
+	opacity           = flag.Uint("opacity", 128, "")
+	random            = flag.Bool("random", false, "")
+	offsetX           = flag.Int("x", 0, "")
+	offsetY           = flag.Int("y", 0, "")
+	width             = flag.Int("width", 0, "")
+	height            = flag.Int("height", 0, "")
+	percent           = flag.Float64("percent", 0, "")
+	worker            = flag.Int("worker", 5, "")
+	quiet             = flag.Bool("q", false, "")
+	debug             = flag.Bool("debug", false, "")
 
 	format      imgconv.Format
 	compression imgconv.TIFFCompression
@@ -60,7 +61,7 @@ func usage() {
   --pdf
 		convert pdf source (default: false)
   --format
-		output format (jpg, jpeg, png, gif, tif, tiff, bmp and pdf are supported, default: jpg)
+		output format (jpg, jpeg, png, gif, tif, tiff, bmp, pdf and webp are supported, default: jpg)
   --white-background
 		use white color for transparent background (default: false)
   --gray
@@ -71,6 +72,8 @@ func usage() {
 		set tiff compression type (none, deflate, default: deflate)
   --auto-orientation
 		auto orientation (default: false)
+  --use-extended-format
+		set webp to use extended format (default: false)
   --watermark
 		watermark path
   --opacity
@@ -164,6 +167,9 @@ func main() {
 	}
 	if format == imgconv.TIFF {
 		opts = append(opts, imgconv.TIFFCompressionType(compression))
+	}
+	if format == imgconv.WEBP {
+		opts = append(opts, imgconv.WEBPUseExtendedFormat(*useExtendedFormat))
 	}
 	if *whiteBackground {
 		opts = append(opts, imgconv.BackgroundColor(color.White))
