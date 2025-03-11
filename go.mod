@@ -3,7 +3,7 @@ module github.com/sunshineplan/imgconv
 go 1.24
 
 require (
-	github.com/HugoSmits86/nativewebp v1.1.0
+	github.com/HugoSmits86/nativewebp v1.1.2
 	github.com/sunshineplan/pdf v1.0.7
 	golang.org/x/image v0.25.0
 )
