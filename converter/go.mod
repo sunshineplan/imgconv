@@ -10,7 +10,7 @@ require (
 )
 
 require (
-	github.com/HugoSmits86/nativewebp v1.1.2 // indirect
+	github.com/HugoSmits86/nativewebp v1.1.4 // indirect
 	github.com/hhrutter/lzw v1.0.0 // indirect
 	github.com/hhrutter/tiff v1.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
