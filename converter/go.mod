@@ -5,7 +5,7 @@ go 1.24
 require (
 	github.com/sunshineplan/imgconv v0.0.0-00010101000000-000000000000
 	github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906
-	github.com/sunshineplan/utils v0.1.75
+	github.com/sunshineplan/utils v0.1.76
 	github.com/sunshineplan/workers v1.0.5
 )
 
