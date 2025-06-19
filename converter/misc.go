@@ -35,7 +35,22 @@ func open(file string) (image.Image, error) {
 	return img, err
 }
 
-func loadImages(root string, pdf bool) (imgs []string) {
+func size(file string) (n int64) {
+	info, err := os.Stat(file)
+	if err == nil {
+		n = info.Size()
+	}
+	return
+}
+
+func shorten(path string) string {
+	if len(path) > 50 {
+		return path[:25] + "..." + path[len(path)-25:]
+	}
+	return path
+}
+
+func loadImages(root string, pdf bool) (imgs []string, size int64) {
 	var message string
 	var width int
 	done := make(chan struct{})
@@ -59,11 +74,16 @@ func loadImages(root string, pdf bool) (imgs []string) {
 	filepath.WalkDir(root, func(path string, d fs.DirEntry, _ error) error {
 		if supported.MatchString(d.Name()) || (pdf && pdfImage.MatchString(d.Name())) {
 			imgs = append(imgs, path)
+			if info, err := d.Info(); err != nil {
+				log.Error("Failed to get FileInfo", "name", path, "error", err)
+			} else {
+				size += info.Size()
+			}
 		}
 		if d.IsDir() {
 			dir = filepath.Dir(path)
 		}
-		message = fmt.Sprintf("Found images: %d, Scanning directory %s", len(imgs), dir)
+		message = fmt.Sprintf("Found images: %d, Scanning directory %s", len(imgs), shorten(dir))
 		return nil
 	})
 	close(done)
