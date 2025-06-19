@@ -11,12 +11,14 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"github.com/sunshineplan/imgconv"
 	"github.com/sunshineplan/utils/flags"
 	"github.com/sunshineplan/utils/log"
 	"github.com/sunshineplan/utils/progressbar"
+	"github.com/sunshineplan/utils/unit"
 	"github.com/sunshineplan/workers"
 )
 
@@ -41,6 +43,7 @@ var (
 	percent           = flag.Float64("percent", 0, "")
 	worker            = flag.Int("worker", 5, "")
 	quiet             = flag.Bool("q", false, "")
+	pbWidth           = flag.Int("pb-width", 25, "")
 	debug             = flag.Bool("debug", false, "")
 
 	format      imgconv.Format
@@ -136,10 +139,10 @@ func main() {
 	if *test {
 		switch {
 		case srcInfo.Mode().IsDir():
-			images := loadImages(*src, *pdf)
+			images, totalSize := loadImages(*src, *pdf)
 			total := len(images)
-			log.Println("Total images:", total)
-			pb := progressbar.New(total)
+			log.Printf("Total images: %d (%s)", total, unit.ByteSize(totalSize))
+			pb := progressbar.New(total).SetWidth(*pbWidth)
 			pb.Start()
 			workers.Workers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
 				defer pb.Add(1)
@@ -216,13 +219,14 @@ func main() {
 			code = 1
 			return
 		}
-		images := loadImages(*src, *pdf)
+		images, totalSize := loadImages(*src, *pdf)
 		total := len(images)
-		log.Println("Total images:", total)
-		pb := progressbar.New(total)
+		log.Printf("Total images: %d (%s)", total, unit.ByteSize(totalSize))
+		pb := progressbar.New(total).SetWidth(*pbWidth)
 		if !*quiet {
 			pb.Start()
 		}
+		var processed, converted atomic.Int64
 		workers.Workers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
 			defer pb.Add(1)
 			rel, err := filepath.Rel(*src, image)
@@ -238,6 +242,9 @@ func main() {
 				return
 			}
 			log.Debug("Converted " + image)
+			p := processed.Add(size(image))
+			c := converted.Add(size(output))
+			pb.Additional(fmt.Sprintf("%s -> %s(%.2f%%)", unit.ByteSize(p), unit.ByteSize(c), float64(c*100)/float64(p)))
 		}))
 		if !*quiet {
 			pb.Done()
