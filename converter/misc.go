@@ -44,8 +44,8 @@ func size(file string) (n int64) {
 }
 
 func shorten(path string) string {
-	if len(path) > 50 {
-		return path[:25] + "..." + path[len(path)-25:]
+	if runes := []rune(path); len(runes) > 50 {
+		return string(runes[:25]) + " ... " + string(runes[len(runes)-25:])
 	}
 	return path
 }
