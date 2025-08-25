@@ -30,7 +30,7 @@ This repo relies on the following third-party projects:
   * [disintegration/imaging](https://github.com/disintegration/imaging)
   * [pdfcpu/pdfcpu](https://github.com/pdfcpu/pdfcpu)
   * [hhrutter/tiff](https://github.com/hhrutter/tiff)
-  * [HugoSmits86/nativewebp](github.com/HugoSmits86/nativewebp)
+  * [HugoSmits86/nativewebp](https://github.com/HugoSmits86/nativewebp)
 
 ## Usage examples
 
