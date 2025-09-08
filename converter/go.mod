@@ -1,6 +1,6 @@
 module converter
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/sunshineplan/imgconv v0.0.0-00010101000000-000000000000
@@ -18,9 +18,9 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sunshineplan/pdf v1.0.8 // indirect
-	golang.org/x/image v0.30.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/image v0.31.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
