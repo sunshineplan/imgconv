@@ -1,12 +1,12 @@
 module converter
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/sunshineplan/imgconv v0.0.0-00010101000000-000000000000
 	github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906
 	github.com/sunshineplan/utils v0.1.79
-	github.com/sunshineplan/workers v1.0.5
+	github.com/sunshineplan/workers v1.0.6
 )
 
 require (
