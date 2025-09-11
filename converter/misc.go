@@ -155,8 +155,9 @@ func convert(task *imgconv.Options, image, output string, force bool) (err error
 		log.Error("Failed to create temporary file", "path", path, "error", err)
 		return
 	}
-	defer f.Close()
-	if err = task.Convert(f, img); err != nil {
+	err = task.Convert(f, img)
+	f.Close()
+	if err != nil {
 		log.Error("Failed to convert image", "image", image, "error", err)
 		return
 	}
