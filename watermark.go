@@ -38,26 +38,10 @@ func (w *WatermarkOption) do(base image.Image) image.Image {
 	var offset image.Point
 	var mark image.Image
 	if w.Random {
-		if w.Mark.Bounds().Dx() >= base.Bounds().Dx()/3 || w.Mark.Bounds().Dy() >= base.Bounds().Dy()/3 {
-			if calcResizeXY(base.Bounds(), w.Mark.Bounds()) {
-				mark = Resize(w.Mark, &ResizeOption{Width: base.Bounds().Dx() / 3})
-			} else {
-				mark = Resize(w.Mark, &ResizeOption{Height: base.Bounds().Dy() / 3})
-			}
-		} else {
-			mark = w.Mark
-		}
-		mark = rotate(mark, float64(randRange(-30, 30))+rand.Float64(), color.Transparent)
-		offset = image.Pt(
-			randRange(base.Bounds().Dx()/6, base.Bounds().Dx()*5/6-mark.Bounds().Dx()),
-			randRange(base.Bounds().Dy()/6, base.Bounds().Dy()*5/6-mark.Bounds().Dy()))
+		mark, offset = w.randomWatermark(base.Bounds())
 	} else {
-		mark = w.Mark
-		offset = image.Pt(
-			(base.Bounds().Dx()/2)-(mark.Bounds().Dx()/2)+w.Offset.X,
-			(base.Bounds().Dy()/2)-(mark.Bounds().Dy()/2)+w.Offset.Y)
+		mark, offset = w.fixedWatermark(base.Bounds())
 	}
-
 	draw.DrawMask(
 		img,
 		mark.Bounds().Add(offset),
@@ -67,8 +51,32 @@ func (w *WatermarkOption) do(base image.Image) image.Image {
 		image.Point{},
 		draw.Over,
 	)
-
 	return img
+}
+
+func (w *WatermarkOption) randomWatermark(base image.Rectangle) (image.Image, image.Point) {
+	mark := w.Mark
+	if mark.Bounds().Dx() >= base.Dx()/3 || mark.Bounds().Dy() >= base.Dy()/3 {
+		opt := new(ResizeOption)
+		if calcResizeXY(base, mark.Bounds()) {
+			opt.Width = base.Dx() / 3
+		} else {
+			opt.Height = base.Dy() / 3
+		}
+		mark = Resize(mark, opt)
+	}
+	return rotate(mark, float64(randRange(-30, 30))+rand.Float64(), color.Transparent),
+		image.Pt(
+			randRange(base.Dx()/6, base.Dx()*5/6-mark.Bounds().Dx()),
+			randRange(base.Dy()/6, base.Dy()*5/6-mark.Bounds().Dy()),
+		)
+}
+
+func (w *WatermarkOption) fixedWatermark(base image.Rectangle) (image.Image, image.Point) {
+	return w.Mark, image.Pt(
+		(base.Bounds().Dx()/2)-(w.Mark.Bounds().Dx()/2)+w.Offset.X,
+		(base.Bounds().Dy()/2)-(w.Mark.Bounds().Dy()/2)+w.Offset.Y,
+	)
 }
 
 func randRange(min, max int) int {

@@ -3,6 +3,9 @@ package imgconv
 import "image"
 
 func ToGray(img image.Image) image.Image {
+	if img, ok := img.(*image.Gray); ok {
+		return img
+	}
 	bounds := img.Bounds()
 	gray := image.NewGray(bounds)
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
@@ -10,6 +13,5 @@ func ToGray(img image.Image) image.Image {
 			gray.Set(x, y, img.At(x, y))
 		}
 	}
-
 	return gray
 }
