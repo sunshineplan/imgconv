@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -17,14 +16,24 @@ import (
 )
 
 var (
-	supported = regexp.MustCompile(`(?i)\.(jpe?g|png|gif|tiff?|bmp|webp)$`)
-	pdfImage  = regexp.MustCompile(`(?i)\.pdf$`)
-	tiffImage = regexp.MustCompile(`(?i)\.tiff?$`)
+	supported = []string{".jpg", ".jpeg", ".png", ".gif", ".tif", ".tiff", ".bmp", ".webp"}
+	pdfImage  = []string{".pdf"}
+	tiffImage = []string{".tif", ".tiff"}
 )
+
+func matchFile(exts []string, file string) bool {
+	file = strings.ToLower(file)
+	for _, i := range exts {
+		if strings.HasSuffix(file, i) {
+			return true
+		}
+	}
+	return false
+}
 
 func open(file string) (image.Image, error) {
 	img, err := imgconv.Open(file, imgconv.AutoOrientation(*autoOrientation))
-	if err != nil && tiffImage.MatchString(file) {
+	if err != nil && matchFile(tiffImage, file) {
 		f, err := os.Open(file)
 		if err != nil {
 			return nil, err
@@ -51,46 +60,73 @@ func shorten(path string) string {
 }
 
 func loadImages(root string, pdf bool) (imgs []string, size int64) {
-	var message string
-	var width int
+	c := make(chan walkerResult)
 	done := make(chan struct{})
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+	var dir string
+	var message string
 	go func() {
 		for {
-			select {
-			case <-done:
+			res, ok := <-c
+			if !ok {
+				close(done)
 				return
-			case <-ticker.C:
-				m := message
-				if !*quiet {
-					fmt.Fprintf(os.Stdout, "\r%s\r%s", strings.Repeat(" ", width), m)
-				}
-				width = len(m)
 			}
+			if res.isDir {
+				dir = res.path
+			} else {
+				imgs = append(imgs, res.path)
+				size += res.size
+			}
+			message = fmt.Sprintf("Found images: %d, Scanning directory %s", len(imgs), shorten(dir))
 		}
 	}()
-	var dir string
-	filepath.WalkDir(root, func(path string, d fs.DirEntry, _ error) error {
-		if supported.MatchString(d.Name()) || (pdf && pdfImage.MatchString(d.Name())) {
-			imgs = append(imgs, path)
-			if info, err := d.Info(); err != nil {
-				log.Error("Failed to get FileInfo", "name", path, "error", err)
-			} else {
-				size += info.Size()
+	if !*quiet {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		go func() {
+			var width int
+			for {
+				select {
+				case <-done:
+					fmt.Fprintf(os.Stdout, "\r%s\r", strings.Repeat(" ", width))
+					return
+				case <-ticker.C:
+					m := message
+					fmt.Fprintf(os.Stdout, "\r%s\r%s", strings.Repeat(" ", width), m)
+					width = len(m)
+				}
 			}
+		}()
+	}
+	walkDir(root, pdf, c)
+	return
+}
+
+type walkerResult struct {
+	path  string
+	size  int64
+	isDir bool
+}
+
+func walkDir(root string, pdf bool, c chan<- walkerResult) {
+	defer close(c)
+	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			log.Print(err)
+			return nil
 		}
 		if d.IsDir() {
-			dir = filepath.Dir(path)
+			c <- walkerResult{path: path, isDir: true}
+		} else if name := d.Name(); matchFile(supported, name) || (pdf && matchFile(pdfImage, name)) {
+			info, err := d.Info()
+			if err != nil {
+				log.Error("Failed to get FileInfo", "name", path, "error", err)
+				return nil
+			}
+			c <- walkerResult{path: path, size: info.Size()}
 		}
-		message = fmt.Sprintf("Found images: %d, Scanning directory %s", len(imgs), shorten(dir))
 		return nil
 	})
-	close(done)
-	if !*quiet {
-		fmt.Fprintf(os.Stdout, "\r%s\r", strings.Repeat(" ", width))
-	}
-	return
 }
 
 var errSkip = errors.New("skip")
@@ -119,11 +155,12 @@ func convert(task *imgconv.Options, image, output string, force bool) (err error
 		log.Error("Failed to create temporary file", "path", path, "error", err)
 		return
 	}
-	if err = task.Convert(f, img); err != nil {
+	err = task.Convert(f, img)
+	f.Close()
+	if err != nil {
 		log.Error("Failed to convert image", "image", image, "error", err)
 		return
 	}
-	f.Close()
 	if err = os.Rename(f.Name(), output); err != nil {
 		log.Error("Failed to move file", "from", f.Name(), "to", output, "error", err)
 	}

@@ -49,11 +49,9 @@ var formatExts = [][]string{
 }
 
 func (f Format) String() (format string) {
-	defer func() {
-		if err := recover(); err != nil {
-			format = "unknown"
-		}
-	}()
+	if f < 0 || int(f) >= len(formatExts) {
+		return "unknown"
+	}
 	return formatExts[f][0]
 }
 
@@ -122,13 +120,10 @@ func (c *TIFFCompression) UnmarshalText(text []byte) error {
 }
 
 func (c TIFFCompression) MarshalText() (b []byte, err error) {
-	defer func() {
-		if err := recover(); err != nil {
-			b = []byte("unknown")
-		}
-	}()
-	ct := tiffCompression[c]
-	return []byte(ct), nil
+	if c < 0 || int(c) >= len(tiffCompression) {
+		return []byte("unknown"), nil
+	}
+	return []byte(tiffCompression[c]), nil
 }
 
 // FormatOption is format option

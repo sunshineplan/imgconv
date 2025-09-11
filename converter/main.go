@@ -222,13 +222,16 @@ func main() {
 		images, totalSize := loadImages(*src, *pdf)
 		total := len(images)
 		log.Printf("Total images: %d (%s)", total, unit.ByteSize(totalSize))
-		pb := progressbar.New(total).SetWidth(*pbWidth)
+		var pb *progressbar.ProgressBar
 		if !*quiet {
+			pb = progressbar.New(total).SetWidth(*pbWidth)
 			pb.Start()
 		}
 		var processed, converted atomic.Int64
 		workers.Workers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
-			defer pb.Add(1)
+			if pb != nil {
+				defer pb.Add(1)
+			}
 			rel, err := filepath.Rel(*src, image)
 			if err != nil {
 				log.Error("Failed to get relative path", "source", *src, "image", image, "error", err)
@@ -244,9 +247,11 @@ func main() {
 			log.Debug("Converted " + image)
 			p := processed.Add(size(image))
 			c := converted.Add(size(output))
-			pb.Additional(fmt.Sprintf("%s -> %s(%.2f%%)", unit.ByteSize(p), unit.ByteSize(c), float64(c*100)/float64(p)))
+			if pb != nil {
+				pb.Additional(fmt.Sprintf("%s -> %s(%.2f%%)", unit.ByteSize(p), unit.ByteSize(c), float64(c*100)/float64(p)))
+			}
 		}))
-		if !*quiet {
+		if pb != nil {
 			pb.Done()
 		}
 	case srcInfo.Mode().IsRegular():
