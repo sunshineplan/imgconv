@@ -150,7 +150,7 @@ func main() {
 					log.Error("Bad image", "image", image, "error", err)
 				}
 			}))
-			pb.Done()
+			pb.Wait()
 		case srcInfo.Mode().IsRegular():
 			if _, err := open(*src); err != nil {
 				log.Error("Bad image", "image", *src, "error", err)
@@ -222,7 +222,7 @@ func main() {
 		images, totalSize := loadImages(*src, *pdf)
 		total := len(images)
 		log.Printf("Total images: %d (%s)", total, unit.ByteSize(totalSize))
-		var pb *progressbar.ProgressBar
+		var pb *progressbar.ProgressBar[int]
 		if !*quiet {
 			pb = progressbar.New(total).SetWidth(*pbWidth)
 			pb.Start()
@@ -252,7 +252,7 @@ func main() {
 			}
 		}))
 		if pb != nil {
-			pb.Done()
+			pb.Wait()
 		}
 	case srcInfo.Mode().IsRegular():
 		output := *dst
