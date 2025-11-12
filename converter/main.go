@@ -91,6 +91,8 @@ func usage() {
 		resize percent, only when both of width and height are 0.`)
 }
 
+var winsize = progressbar.GetWinsize()
+
 func main() {
 	var code int
 	defer func() {
@@ -131,13 +133,14 @@ func main() {
 		return
 	}
 
+	blockWidth := max(winsize-120, 10)
 	if *test {
 		switch {
 		case srcInfo.Mode().IsDir():
 			images, totalSize := loadImages(*src, *pdf)
 			total := len(images)
 			log.Printf("Total images: %d (%s)", total, unit.ByteSize(totalSize))
-			pb := progressbar.New(total).SetWidth(progressbar.GetWinsize() - 120)
+			pb := progressbar.New(total).SetWidth(blockWidth)
 			pb.Start()
 			workers.Workers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
 				defer pb.Add(1)
@@ -219,7 +222,7 @@ func main() {
 		log.Printf("Total images: %d (%s)", total, unit.ByteSize(totalSize))
 		var pb *progressbar.ProgressBar[int]
 		if !*quiet {
-			pb = progressbar.New(total).SetWidth(progressbar.GetWinsize() - 120)
+			pb = progressbar.New(total).SetWidth(blockWidth)
 			pb.Start()
 		}
 		var processed, converted atomic.Int64
