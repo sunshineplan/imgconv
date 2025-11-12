@@ -8,16 +8,15 @@ import (
 	"image"
 	"image/color"
 	"io/fs"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"sync/atomic"
 	"time"
 
 	"github.com/sunshineplan/imgconv"
+	"github.com/sunshineplan/progressbar"
 	"github.com/sunshineplan/utils/flags"
 	"github.com/sunshineplan/utils/log"
-	"github.com/sunshineplan/utils/progressbar"
 	"github.com/sunshineplan/utils/unit"
 	"github.com/sunshineplan/workers"
 )
@@ -43,7 +42,6 @@ var (
 	percent           = flag.Float64("percent", 0, "")
 	worker            = flag.Int("worker", 5, "")
 	quiet             = flag.Bool("q", false, "")
-	pbWidth           = flag.Int("pb-width", 25, "")
 	debug             = flag.Bool("debug", false, "")
 
 	format      imgconv.Format
@@ -125,9 +123,6 @@ func main() {
 	flags.Parse()
 
 	log.SetOutput(filepath.Join(filepath.Dir(self), fmt.Sprintf("convert%s.log", time.Now().Format("20060102150405"))), os.Stdout)
-	if *debug {
-		log.SetLevel(slog.LevelDebug)
-	}
 
 	srcInfo, err := os.Stat(*src)
 	if err != nil {
@@ -142,12 +137,12 @@ func main() {
 			images, totalSize := loadImages(*src, *pdf)
 			total := len(images)
 			log.Printf("Total images: %d (%s)", total, unit.ByteSize(totalSize))
-			pb := progressbar.New(total).SetWidth(*pbWidth)
+			pb := progressbar.New(total).SetWidth(progressbar.GetWinsize() - 120)
 			pb.Start()
 			workers.Workers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
 				defer pb.Add(1)
 				if _, err := open(image); err != nil {
-					log.Error("Bad image", "image", image, "error", err)
+					pb.Message(fmt.Sprintf("Bad image path=%s error=%s", image, err))
 				}
 			}))
 			pb.Wait()
@@ -224,7 +219,7 @@ func main() {
 		log.Printf("Total images: %d (%s)", total, unit.ByteSize(totalSize))
 		var pb *progressbar.ProgressBar[int]
 		if !*quiet {
-			pb = progressbar.New(total).SetWidth(*pbWidth)
+			pb = progressbar.New(total).SetWidth(progressbar.GetWinsize() - 120)
 			pb.Start()
 		}
 		var processed, converted atomic.Int64
@@ -234,17 +229,21 @@ func main() {
 			}
 			rel, err := filepath.Rel(*src, image)
 			if err != nil {
-				log.Error("Failed to get relative path", "source", *src, "image", image, "error", err)
+				pb.Message(fmt.Sprintf("Failed to get relative path source=%s image=%s error=%s", *src, image, err))
 				return
 			}
 			output := task.ConvertExt(filepath.Join(*dst, rel))
 			if err := convert(task, image, output, *force); err != nil {
 				if err == errSkip && !*quiet {
-					log.Println("Skip", output)
+					pb.Message("Skip " + output)
+				} else {
+					pb.Message(err.Error())
 				}
 				return
 			}
-			log.Debug("Converted " + image)
+			if *debug {
+				pb.Message("Converted " + image)
+			}
 			p := processed.Add(size(image))
 			c := converted.Add(size(output))
 			if pb != nil {
@@ -262,6 +261,8 @@ func main() {
 		if err := convert(task, *src, output, *force); err != nil {
 			if err == errSkip {
 				log.Error("Destination already exist", "destination", output)
+			} else {
+				log.Error(err.Error())
 			}
 			code = 1
 			return
