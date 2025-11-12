@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mattn/go-runewidth"
 	"github.com/sunshineplan/imgconv"
 	"github.com/sunshineplan/tiff"
 	"github.com/sunshineplan/utils/log"
@@ -52,9 +53,12 @@ func size(file string) (n int64) {
 	return
 }
 
-func shorten(path string) string {
-	if runes := []rune(path); len(runes) > 50 {
-		return string(runes[:25]) + " ... " + string(runes[len(runes)-25:])
+func shorten(path string, used int) string {
+	length := runewidth.StringWidth(path)
+	if limit := winsize - used - 3; length > limit {
+		limit -= 3
+		limit /= 2
+		return runewidth.Truncate(path, limit, "") + "..." + runewidth.TruncateLeft(path, length-limit, "")
 	}
 	return path
 }
@@ -77,7 +81,8 @@ func loadImages(root string, pdf bool) (imgs []string, size int64) {
 				imgs = append(imgs, res.path)
 				size += res.size
 			}
-			message = fmt.Sprintf("Found images: %d, Scanning directory %s", len(imgs), shorten(dir))
+			message = fmt.Sprintf("Found images: %d, Scanning directory ", len(imgs))
+			message += shorten(dir, len(message))
 		}
 	}()
 	if !*quiet {
@@ -93,7 +98,7 @@ func loadImages(root string, pdf bool) (imgs []string, size int64) {
 				case <-ticker.C:
 					m := message
 					fmt.Fprintf(os.Stdout, "\r%s\r%s", strings.Repeat(" ", width), m)
-					width = len(m)
+					width = runewidth.StringWidth(m)
 				}
 			}
 		}()
