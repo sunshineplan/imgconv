@@ -131,38 +131,33 @@ func walkDir(root string, pdf bool, c chan<- walkerResult) {
 
 var errSkip = errors.New("skip")
 
-func convert(task *imgconv.Options, image, output string, force bool) (err error) {
-	if _, err = os.Stat(output); err == nil {
+func convert(task *imgconv.Options, image, output string, force bool) error {
+	if _, err := os.Stat(output); err == nil {
 		if !force {
 			return errSkip
 		}
 	} else if !errors.Is(err, fs.ErrNotExist) {
-		log.Error("Failed to get FileInfo", "name", output, "error", err)
-		return
+		return fmt.Errorf("failed to get FileInfo name=%s error=%w", output, err)
 	}
 	path := filepath.Dir(output)
-	if err = os.MkdirAll(path, 0755); err != nil {
-		log.Error("Failed to create directory", "path", path, "error", err)
-		return
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return fmt.Errorf("failed to create directory path=%s error=%w", path, err)
 	}
 	img, err := open(image)
 	if err != nil {
-		log.Error("Failed to open image", "image", image, "error", err)
-		return
+		return fmt.Errorf("failed to open image image=%s error=%w", image, err)
 	}
 	f, err := os.CreateTemp(path, "*.tmp")
 	if err != nil {
-		log.Error("Failed to create temporary file", "path", path, "error", err)
-		return
+		return fmt.Errorf("failed to create temporary file path=%s error=%w", path, err)
 	}
 	err = task.Convert(f, img)
 	f.Close()
 	if err != nil {
-		log.Error("Failed to convert image", "image", image, "error", err)
-		return
+		return fmt.Errorf("failed to convert image image=%s error=%w", image, err)
 	}
 	if err = os.Rename(f.Name(), output); err != nil {
-		log.Error("Failed to move file", "from", f.Name(), "to", output, "error", err)
+		return fmt.Errorf("failed to move file from=%s to=%s error=%w", f.Name(), output, err)
 	}
-	return
+	return nil
 }
