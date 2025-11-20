@@ -5,7 +5,7 @@ go 1.25
 require (
 	github.com/mattn/go-runewidth v0.0.19
 	github.com/sunshineplan/imgconv v0.0.0-00010101000000-000000000000
-	github.com/sunshineplan/progressbar v1.0.0
+	github.com/sunshineplan/progressbar v1.0.1
 	github.com/sunshineplan/tiff v0.0.0-20220128141034-29b9d69bd906
 	github.com/sunshineplan/utils v0.1.82
 	github.com/sunshineplan/workers v1.0.6
