@@ -137,7 +137,7 @@ func main() {
 			images, totalSize := loadImages(*src, *pdf)
 			total := len(images)
 			log.Printf("Total images: %d (%s)", total, unit.ByteSize(totalSize))
-			pb := progressbar.New(total)
+			pb := progressbar.New(total).SetWidth(24)
 			pb.Start()
 			workers.Workers(*worker).Run(context.Background(), workers.SliceJob(images, func(_ int, image string) {
 				defer pb.Add(1)
@@ -219,7 +219,7 @@ func main() {
 		log.Printf("Total images: %d (%s)", total, unit.ByteSize(totalSize))
 		var pb *progressbar.ProgressBar[int]
 		if !*quiet {
-			pb = progressbar.New(total)
+			pb = progressbar.New(total).SetWidth(24)
 			pb.Start()
 		}
 		var processed, converted atomic.Int64
@@ -247,7 +247,7 @@ func main() {
 			p := processed.Add(size(image))
 			c := converted.Add(size(output))
 			if pb != nil {
-				pb.Additional(fmt.Sprintf("%s -> %s(%.2f%%)", unit.ByteSize(p), unit.ByteSize(c), float64(c*100)/float64(p)))
+				pb.Additional(fmt.Sprintf("%s→%s(%.1f%%)", unit.ByteSize(p), unit.ByteSize(c), float64(c*100)/float64(p)))
 			}
 		}))
 		if pb != nil {
