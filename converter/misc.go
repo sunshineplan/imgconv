@@ -12,6 +12,7 @@ import (
 
 	"github.com/mattn/go-runewidth"
 	"github.com/sunshineplan/imgconv"
+	"github.com/sunshineplan/progressbar"
 	"github.com/sunshineplan/tiff"
 	"github.com/sunshineplan/utils/log"
 )
@@ -52,6 +53,8 @@ func size(file string) (n int64) {
 	}
 	return
 }
+
+var winsize = progressbar.GetWinsize()
 
 func shorten(path string, used int) string {
 	length := runewidth.StringWidth(path)
