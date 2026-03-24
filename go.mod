@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/HugoSmits86/nativewebp v1.2.1
 	github.com/sunshineplan/pdf v1.0.8
-	golang.org/x/image v0.37.0
+	golang.org/x/image v0.38.0
 )
 
 require (
