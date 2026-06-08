@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/HugoSmits86/nativewebp v1.3.0
 	github.com/sunshineplan/pdf v1.0.8
-	golang.org/x/image v0.41.0
+	golang.org/x/image v0.42.0
 )
 
 require (
@@ -15,6 +15,6 @@ require (
 	github.com/pdfcpu/pdfcpu v0.9.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
