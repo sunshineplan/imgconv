@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HugoSmits86/nativewebp"
 	"github.com/sunshineplan/imgconv"
 	"github.com/sunshineplan/progressbar"
 	"github.com/sunshineplan/utils/flags"
@@ -30,6 +31,7 @@ var (
 	whiteBackground   = flag.Bool("white-background", false, "")
 	gray              = flag.Bool("gray", false, "")
 	quality           = flag.Int("quality", 75, "")
+	webpCompression   = flag.Int("webp-compression", int(nativewebp.DefaultCompression), "")
 	autoOrientation   = flag.Bool("auto-orientation", false, "")
 	useExtendedFormat = flag.Bool("use-extended-format", false, "")
 	watermark         = flag.String("watermark", "", "")
@@ -44,8 +46,8 @@ var (
 	quiet             = flag.Bool("q", false, "")
 	debug             = flag.Bool("debug", false, "")
 
-	format      imgconv.Format
-	compression imgconv.TIFFCompression
+	format          imgconv.Format
+	tiffCompression imgconv.TIFFCompression
 )
 
 func usage() {
@@ -69,8 +71,10 @@ func usage() {
 		convert to grayscale (default: false)
   --quality
 		set jpeg or pdf quality (range 1-100, default: 75)
-  --compression
+  --tiff-compression
 		set tiff compression type (none, deflate, default: deflate)
+  --webp-compression
+		set webp compression level (0-6, default: 4)
   --auto-orientation
 		auto orientation (default: false)
   --use-extended-format
@@ -118,7 +122,8 @@ func main() {
 	flag.CommandLine.Init(os.Args[0], flag.PanicOnError)
 	flag.Usage = usage
 	flag.TextVar(&format, "format", imgconv.JPEG, "")
-	flag.TextVar(&compression, "compression", imgconv.TIFFDeflate, "")
+	flag.TextVar(&tiffCompression, "compression", imgconv.TIFFDeflate, "") // compatibility alias, may be removed in future
+	flag.TextVar(&tiffCompression, "tiff-compression", imgconv.TIFFDeflate, "")
 	flags.SetConfigFile(filepath.Join(filepath.Dir(self), "config.ini"))
 	flags.Parse()
 
@@ -164,10 +169,11 @@ func main() {
 		opts = append(opts, imgconv.Quality(*quality))
 	}
 	if format == imgconv.TIFF {
-		opts = append(opts, imgconv.TIFFCompressionType(compression))
+		opts = append(opts, imgconv.TIFFCompressionType(tiffCompression))
 	}
 	if format == imgconv.WEBP {
 		opts = append(opts, imgconv.WEBPUseExtendedFormat(*useExtendedFormat))
+		opts = append(opts, imgconv.WEBPCompressionLevel(nativewebp.CompressionLevel(*webpCompression)))
 	}
 	if *whiteBackground {
 		opts = append(opts, imgconv.BackgroundColor(color.White))

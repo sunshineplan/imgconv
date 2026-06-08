@@ -140,16 +140,18 @@ type encodeConfig struct {
 	pngCompressionLevel   png.CompressionLevel
 	tiffCompressionType   TIFFCompression
 	webpUseExtendedFormat bool
+	webpCompressionLevel  nativewebp.CompressionLevel
 	background            color.Color
 }
 
 var defaultEncodeConfig = encodeConfig{
-	Quality:             75,
-	gifNumColors:        256,
-	gifQuantizer:        nil,
-	gifDrawer:           nil,
-	pngCompressionLevel: png.DefaultCompression,
-	tiffCompressionType: TIFFDeflate,
+	Quality:              75,
+	gifNumColors:         256,
+	gifQuantizer:         nil,
+	gifDrawer:            nil,
+	pngCompressionLevel:  png.DefaultCompression,
+	tiffCompressionType:  TIFFDeflate,
+	webpCompressionLevel: nativewebp.DefaultCompression,
 }
 
 // EncodeOption sets an optional parameter for the Encode and Save functions.
@@ -212,6 +214,14 @@ func WEBPUseExtendedFormat(b bool) EncodeOption {
 	}
 }
 
+// WEBPCompressionLevel returns an EncodeOption that sets the compression level
+// of the WEBP-encoded image. Default is nativewebp.DefaultCompression.
+func WEBPCompressionLevel(level nativewebp.CompressionLevel) EncodeOption {
+	return func(c *encodeConfig) {
+		c.webpCompressionLevel = level
+	}
+}
+
 // BackgroundColor returns an EncodeOption that sets the background color.
 func BackgroundColor(color color.Color) EncodeOption {
 	return func(c *encodeConfig) {
@@ -266,7 +276,10 @@ func (f *FormatOption) Encode(w io.Writer, img image.Image) error {
 		return pdf.Encode(w, []image.Image{img}, &pdf.Options{Quality: cfg.Quality})
 
 	case WEBP:
-		return nativewebp.Encode(w, img, &nativewebp.Options{UseExtendedFormat: cfg.webpUseExtendedFormat})
+		return nativewebp.Encode(w, img, &nativewebp.Options{
+			UseExtendedFormat: cfg.webpUseExtendedFormat,
+			CompressionLevel:  cfg.webpCompressionLevel,
+		})
 	}
 
 	return image.ErrFormat

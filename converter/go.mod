@@ -3,6 +3,7 @@ module converter
 go 1.26
 
 require (
+	github.com/HugoSmits86/nativewebp v1.3.0
 	github.com/mattn/go-runewidth v0.0.24
 	github.com/sunshineplan/imgconv v0.0.0-00010101000000-000000000000
 	github.com/sunshineplan/progressbar v1.0.1
@@ -12,7 +13,6 @@ require (
 )
 
 require (
-	github.com/HugoSmits86/nativewebp v1.3.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
 	github.com/hhrutter/lzw v1.0.0 // indirect
 	github.com/hhrutter/tiff v1.0.1 // indirect

@@ -8,6 +8,8 @@ import (
 	"image/png"
 	"io"
 	"testing"
+
+	"github.com/HugoSmits86/nativewebp"
 )
 
 func TestFormatFromExtension(t *testing.T) {
@@ -69,6 +71,7 @@ func TestEncode(t *testing.T) {
 		{Format: TIFF, EncodeOption: []EncodeOption{TIFFCompressionType(TIFFDeflate)}},
 		{Format: BMP},
 		{Format: PDF, EncodeOption: []EncodeOption{Quality(75)}},
+		{Format: WEBP, EncodeOption: []EncodeOption{WEBPCompressionLevel(nativewebp.DefaultCompression)}},
 	}
 
 	// Read the image.
