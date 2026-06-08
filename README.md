@@ -85,6 +85,7 @@ import (
 	"io"
 	"log"
 
+	"github.com/HugoSmits86/nativewebp"
 	"github.com/sunshineplan/imgconv"
 )
 
@@ -104,6 +105,16 @@ func main() {
 	// Write the resulting image as TIFF.
 	if err := imgconv.Write(io.Discard, dst, &imgconv.FormatOption{Format: imgconv.TIFF}); err != nil {
 		log.Fatalf("failed to write image: %v", err)
+	}
+
+	// Write the resulting image as WEBP with an explicit compression level.
+	if err := imgconv.Write(io.Discard, dst, &imgconv.FormatOption{
+		Format: imgconv.WEBP,
+		EncodeOption: []imgconv.EncodeOption{
+			imgconv.WEBPCompressionLevel(nativewebp.DefaultCompression),
+		},
+	}); err != nil {
+		log.Fatalf("failed to write webp image: %v", err)
 	}
 
 	// Split the image into 3 parts horizontally.
